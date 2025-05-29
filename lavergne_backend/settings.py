@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&k!i$i&16q18*9v*mc3ih9hjfp7yhpllj91j2-9f5oyaj0q_d('
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-default-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
@@ -133,7 +133,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # URL của frontend Local (Next.js)
 ]
 
-ALLOWED_HOSTS = ["*", "your-railway-domain.up.railway.app"]  # tạm thời cho tất cả để dễ test
+ALLOWED_HOSTS = ["*", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # Thêm:
