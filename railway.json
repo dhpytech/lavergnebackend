@@ -1,11 +1,15 @@
 {
   "build": {
-    "env": {
-      "PYTHONUNBUFFERED": "1"
-    },
-    "cmd": "pip install -r requirements.txt"
+    "backend": {
+      "installCommand": "pip install -r requirements.txt",
+      "buildCommand": "",
+      "rootDir": "backend"
+    }
   },
   "start": {
-    "cmd": "gunicorn lavergne_backend.wsgi"
+    "backend": {
+      "startCommand": "gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT",
+      "rootDir": "backend"
+    }
   }
 }
