@@ -1,1 +1,2 @@
-web: gunicorn lavergne_backend.wsgi
+gunicorn myproject.wsgi:application --bind 0.0.0.0:8080
+
