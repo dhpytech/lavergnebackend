@@ -8,7 +8,7 @@
   },
   "start": {
     "backend": {
-      "startCommand": "gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT",
+      "startCommand": "gunicorn lavergne_backend.wsgi:application --bind 0.0.0.0:$PORT",
       "rootDir": "backend"
     }
   }
