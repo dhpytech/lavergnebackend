@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,9 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-&k!i$i&16q18*9v*mc3ih9hjfp7yhpllj91j2-9f5oyaj0q_d('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -133,6 +132,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # URL của frontend Local (Next.js)
 ]
+
+ALLOWED_HOSTS = ["*", "your-railway-domain.up.railway.app"]  # tạm thời cho tất cả để dễ test
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
+# Thêm:
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True  # nếu bạn dùng cookie
 
@@ -161,8 +167,6 @@ SIMPLE_JWT = {
 INSTALLED_APPS += ["corsheaders"]
 MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware"] + MIDDLEWARE
 
-# Cho phép phục vụ static files
-STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Whitenoise cho Heroku, Railway, etc.
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
