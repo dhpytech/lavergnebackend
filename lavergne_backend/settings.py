@@ -133,8 +133,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # URL của frontend Local (Next.js)
 ]
 
-ALLOWED_HOSTS = ["*", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
-DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = ["localhost","127.0.0.1", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
+# DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 
 # Thêm:
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -148,9 +149,13 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    ],
 }
 
 SIMPLE_JWT = {
@@ -164,7 +169,6 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
-INSTALLED_APPS += ["corsheaders"]
 MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware"] + MIDDLEWARE
 
 
