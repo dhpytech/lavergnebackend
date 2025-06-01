@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     # Thêm các app của bạn ở đây
     'accounts',
     'entries',
-    'dashboards'
+    'dashboards',
     'rest_framework',
     'corsheaders',
 ]
