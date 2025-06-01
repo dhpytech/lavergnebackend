@@ -49,8 +49,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -87,6 +87,12 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 if os.path.exists(".env"):
     from dotenv import load_dotenv
     load_dotenv()
+
+os.environ.setdefault("PGDATABASE", "lavergen_backend_dev")
+os.environ.setdefault("PGUSER", "lavergne")
+os.environ.setdefault("PGPASSWORD", "")
+os.environ.setdefault("PGHOST", "localhost")
+os.environ.setdefault("PGPORT", "5432")
 
 DATABASES = {
     "default": {
@@ -132,6 +138,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -146,9 +154,6 @@ CORS_ALLOWED_ORIGINS = [
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
 # DEBUG = os.getenv("DEBUG", "False") == "True"
 DEBUG = True
-
-# Thêm:
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True  # nếu bạn dùng cookie
