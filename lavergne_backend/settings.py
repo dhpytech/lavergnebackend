@@ -61,10 +61,10 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'your_db_name',
-        'USER': 'your_db_user',
-        'PASSWORD': 'your_db_password',
-        'HOST': 'localhost',  # hoặc '127.0.0.1' nếu chạy local
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': 'ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM',
+        'HOST': 'postgres.railway.internal',
         'PORT': '5432',
     }
 }
