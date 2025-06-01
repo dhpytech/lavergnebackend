@@ -60,6 +60,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
+# Whitenoise cho Heroku, Railway, etc.
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
 ROOT_URLCONF = 'lavergne_backend.urls'
 
 TEMPLATES = [
@@ -169,8 +172,5 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
-MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware"] + MIDDLEWARE
 
 
-# Whitenoise cho Heroku, Railway, etc.
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
