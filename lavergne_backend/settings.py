@@ -81,18 +81,18 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
-WSGI_APPLICATION = 'mysite.wsgi.application'
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-if os.path.exists(".env"):
-    from dotenv import load_dotenv
-    load_dotenv()
+# if os.path.exists(".env"):
+#     from dotenv import load_dotenv
+#     load_dotenv()
 
-os.environ.setdefault("PGDATABASE", "lavergen_backend_dev")
-os.environ.setdefault("PGUSER", "lavergne")
-os.environ.setdefault("PGPASSWORD", "")
-os.environ.setdefault("PGHOST", "localhost")
-os.environ.setdefault("PGPORT", "5432")
+# os.environ.setdefault("PGDATABASE", "lavergen_backend_dev")
+# os.environ.setdefault("PGUSER", "lavergne")
+# os.environ.setdefault("PGPASSWORD", "")
+# os.environ.setdefault("PGHOST", "localhost")
+# os.environ.setdefault("PGPORT", "5432")
 
 
 # DATABASES = {
@@ -105,6 +105,7 @@ os.environ.setdefault("PGPORT", "5432")
 #         'PORT': os.environ["PGPORT"],
 #     }
 # }
+# DATABASE_URL=["postgresql://postgres:ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM@postgres.railway.internal:5432/railway"]
 
 DATABASES = {
     "default": {
@@ -134,7 +135,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+# postgresql://postgres:ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM@postgres.railway.internal:5432/railway
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
