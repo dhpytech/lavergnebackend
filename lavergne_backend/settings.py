@@ -84,13 +84,19 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+if os.path.exists(".env"):
+    from dotenv import load_dotenv
+    load_dotenv()
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "railway",
+        "USER": "postgres",
+        "PASSWORD": "ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM",
+        "HOST": "maglev.proxy.rlwy.net",
+        "PORT": "45153",
+    }
 }
 
 # Password validation
