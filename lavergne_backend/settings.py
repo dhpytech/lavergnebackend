@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
-
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -86,10 +86,11 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 # Password validation
@@ -136,7 +137,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # URL của frontend Local (Next.js)
 ]
 
-ALLOWED_HOSTS = ["localhost","127.0.0.1", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web-production-351f.up.railway.app",]  # tạm thời cho tất cả để dễ test
 # DEBUG = os.getenv("DEBUG", "False") == "True"
 DEBUG = True
 
@@ -171,6 +172,3 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': True,  # dùng True nếu có HTTPS
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
-
-
-
