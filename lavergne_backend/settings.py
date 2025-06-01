@@ -34,7 +34,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'lavergnevietnam.urls'
+ROOT_URLCONF = ('lavergne_backend.urls')
 
 TEMPLATES = [
     {
@@ -52,7 +52,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'lavergnevietnam.wsgi.application'
+WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
 DATABASES = {
