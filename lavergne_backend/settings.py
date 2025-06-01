@@ -19,6 +19,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Thêm các app của bạn ở đây
+    'accounts',
+    'entries',
+    'dashboards'
     'rest_framework',
     'corsheaders',
 ]
