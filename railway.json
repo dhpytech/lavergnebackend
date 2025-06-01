@@ -1,15 +1,10 @@
 {
-  "build": {
-    "backend": {
-      "installCommand": "pip install -r requirements.txt",
-      "buildCommand": "",
-      "rootDir": "backend"
-    }
-  },
-   "start": {
-      "backend": {
-        "startCommand": "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn lavergne_backend.wsgi",
-        "rootDir": "backend"
-      }
+    "$schema": "https://railway.app/railway.schema.json",
+    "build": {
+        "builder": "RAILPACK"
+    },
+    "deploy": {
+        "startCommand": "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn lavergne_backend.wsgi"
     }
 }
+
