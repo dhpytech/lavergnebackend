@@ -81,7 +81,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
-
+WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 if os.path.exists(".env"):
