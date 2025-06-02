@@ -61,11 +61,11 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get("PGDATABASE"),
-        'USER': os.environ.get("PGUSER"),
-        'PASSWORD': os.environ.get("PGPASSWORD"),
-        'HOST': os.environ.get("PGHOST"),
-        'PORT': os.environ.get("PGPORT"),
+        'NAME': "railway",
+        'USER': "postgres",
+        'PASSWORD': "ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM",
+        'HOST': "postgres.railway.internal",
+        'PORT': "5432",
     }
 }
 
