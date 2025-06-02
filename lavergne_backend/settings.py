@@ -64,11 +64,10 @@ DATABASES = {
         'NAME': "railway",
         'USER': "postgres",
         'PASSWORD': "ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM",
-        'HOST': "postgres.railway.internal",
-        'PORT': "5432",
+        'HOST': "maglev.proxy.rlwy.net",
+        'PORT': "45153",
     }
 }
-
 
 # Quốc tế hóa
 LANGUAGE_CODE = 'en-us'
