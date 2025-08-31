@@ -10,7 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Bảo mật
 SECRET_KEY = 'your-secret-key'
-DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 # Ứng dụng
@@ -62,16 +61,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': "railway",
-        'USER': "postgres",
-        'PASSWORD': "ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM",
-        'HOST': "maglev.proxy.rlwy.net",
-        'PORT': "45153",
+# DEBUG = True cho local, False cho server
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.getenv('DB_NAME', 'railway'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM'),
+            'HOST': os.getenv('DB_HOST', 'maglev.proxy.rlwy.net'),
+            'PORT': os.getenv('DB_PORT', '45153'),
+        }
+    }
 
 # Quốc tế hóa
 LANGUAGE_CODE = 'en-us'
@@ -93,6 +102,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # CORS
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
     "https://lavergnefrontend-production.up.railway.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
