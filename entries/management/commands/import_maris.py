@@ -178,6 +178,12 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Tổng số bản ghi đọc được: {len(records)}"))
         else:
             with transaction.atomic():
+                # XÓA HẾT DỮ LIỆU CŨ
+                deleted_count, _ = MarisInput.objects.all().delete()
+                self.stdout.write(self.style.WARNING(f"🗑 Đã xóa {deleted_count} bản ghi cũ trong DB"))
+
+                # TẠO DỮ LIỆU MỚI
                 MarisInput.objects.bulk_create(records, batch_size=500)
 
-            self.stdout.write(self.style.SUCCESS(f"✅ Đã import {len(records)} dòng vào DB"))
+            self.stdout.write(self.style.SUCCESS(f"✅ Đã import {len(records)} dòng mới vào DB"))
+
