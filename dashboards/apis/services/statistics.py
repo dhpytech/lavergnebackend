@@ -2,7 +2,8 @@ import datetime
 
 
 class ProductionStats:
-    SHIFT_HOURS = 24  # full day default
+    # dlnc: int
+    # SHIFT_HOURS = 24  # full day default
 
     def __init__(self, records, start_date, end_date, model_cls):
         """
@@ -24,11 +25,14 @@ class ProductionStats:
         self.order_change = 0
         self.mech_fail = 0
         self.repair_time = 0
+        self.SHIFT_HOURS = 0
 
     # ==================== Tính toán hiện tại ====================
     def calculate(self):
         """Tính toán chỉ số cho khoảng thời gian hiện tại"""
+
         for rec in self.records:
+            self.SHIFT_HOURS += 24
             rec_dict = dict(rec) if isinstance(rec, dict) else getattr(rec, "__dict__", {})
 
             main_data = rec_dict.get("mainData") or []
@@ -45,9 +49,9 @@ class ProductionStats:
                 self.stop_time += float(stop.get("hour", 0) or 0)
                 if stop.get("stopTime") == "# ORDER CHANGE":
                     self.order_change += 1
-                if stop.get("stopTime") == "MECHANICAL FAILURE":
+                if stop.get("stopTime") == "# OF MECHANICAL FAILURE":
                     self.mech_fail += 1
-                if stop.get("stopTime") == "TIME FOR THE ORDER CHANGE":
+                if stop.get("stopTime") != "TIME FOR THE ORDER CHANGE":
                     self.repair_time += float(stop.get("hour", 0) or 0)
 
         return self._format_result()
@@ -62,8 +66,7 @@ class ProductionStats:
             else 0
         )
         net_hour = (
-            (self.production + self.reject + self.scrap + self.screen)
-            / (shift_time - self.stop_time)
+            (self.production + self.reject + self.scrap + self.screen)/(shift_time - self.stop_time)
             if (shift_time - self.stop_time) > 0
             else 0
         )
@@ -73,9 +76,9 @@ class ProductionStats:
 
         return {
             "PRODUCTION (KG)": self.production,
-            "SCRAP (KG)": self.scrap,
+            "SCRAP (KG)": self.reject + self.scrap + self.screen,
             "DL/NC (KG)": self.dlnc,
-            "SCRAP/PRODUCTION (%)": (self.scrap / self.production * 100) if self.production > 0 else 0,
+            "SCRAP/PRODUCTION (%)": ((self.reject + self.scrap + self.screen) / self.production * 100) if self.production > 0 else 0,
             "STOP TIME (HOUR)": self.stop_time,
             "NUMBER OF ORDER CHANGE": self.order_change,
             "NUMBER OF MECHANICAL FAILURE": self.mech_fail,

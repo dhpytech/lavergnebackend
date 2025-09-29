@@ -1,6 +1,7 @@
 # dashboards/apis/services/charts.py
 from django.db.models import Sum
 
+
 class ChartGenerator:
     @staticmethod
     def generate(qs):
