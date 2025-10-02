@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:8000')
 
 # Đường dẫn gốc
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -120,5 +120,10 @@ REST_FRAMEWORK = {
 }
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "https://gunicorn-lavergnebackendwsgi-production.up.railway.app",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
