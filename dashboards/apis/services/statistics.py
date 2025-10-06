@@ -125,7 +125,6 @@ class ProductionStats:
         current_stats = self.calculate()
         return self._add_comparison(current_stats, last_month_stats, last_year_stats)
 
-
     def _add_comparison(self, current, last_month, last_year):
         def calc_change(cur, prev):
             if prev == 0:
