@@ -5,7 +5,7 @@ from django.db.models import Sum
 class ChartGenerator:
     @staticmethod
     def generate(qs):
-        # tổng production per productCode
+        # Tổng hợp production per productCode
         production_data = []
         for obj in qs:
             for item in obj.mainData:
@@ -14,16 +14,26 @@ class ChartGenerator:
                     "production": int(item.get("goodPro", 0)) + int(item.get("dlnc", 0))
                 })
 
-        # gom nhóm
+        # Tổng hợp theo product code
         aggregated = {}
         for row in production_data:
             code = row["productCode"]
             aggregated[code] = aggregated.get(code, 0) + row["production"]
 
-        chart_data = [{"productCode": k, "production": v} for k, v in aggregated.items()]
-        chart_data.sort(key=lambda x: -x["production"])
+        total = sum(aggregated.values()) or 1  # tránh chia 0
+
+        # Format dữ liệu chuẩn Recharts
+        chart_data = [
+            {
+                "name": k,                         # Recharts dùng name
+                "value": v,                        # Recharts dùng value
+                "percent": round(v / total * 100, 2)  # phần trăm hiển thị
+            }
+            for k, v in aggregated.items()
+        ]
+        chart_data.sort(key=lambda x: -x["value"])
 
         return {
-            "production_pie": chart_data,  # Pie chart
-            "production_bar": chart_data,  # Bar chart
+            "production_pie": chart_data,  # Dữ liệu cho PieChart
+            "production_bar": chart_data,  # Dữ liệu cho BarChart
         }
