@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:8000')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://gunicorn-lavergnebackendwsgi-production.up.railway.app')
 
 # Đường dẫn gốc
 BASE_DIR = Path(__file__).resolve().parent.parent
