@@ -63,7 +63,7 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
 # DEBUG = True cho local, False cho server
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'False'
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'False'
 if DEBUG:
     DATABASES = {
         'default': {
