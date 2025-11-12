@@ -9,4 +9,4 @@ class SafetyTime(models.Model):
     safety_description = models.TextField(verbose_name="Description of Occurrence")
 
     def __str__(self):
-        return f"{self.safety_date} - {self.safety_type} - {self.safety_description}"
+        return f"{self.safety_date} - {self.get_safety_type_display()} - {self.safety_description}"

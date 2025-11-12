@@ -100,6 +100,8 @@ class ProductionStats:
             "OEE (%)": f"{oee:.2%}",
             "MTTR (HOUR)": round(mttr, 2),
             "MTBF (HOUR)": round(mtbf, 2),
+            "INCIDENT (TIMES)": 0,
+            "ACCIDENT (TIMES)": 0,
         }
 
     # ==================== So sánh ====================
