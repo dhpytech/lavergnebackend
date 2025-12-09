@@ -27,7 +27,7 @@ class ChartGenerator:
             {
                 "name": k,                         # Recharts dùng name
                 "value": v,                        # Recharts dùng value
-                "percent": round(v / total * 100, 2)  # phần trăm hiển thị
+                "percent": round(v / total, 2)  # phần trăm hiển thị
             }
             for k, v in aggregated.items()
         ]

@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://gunicorn-lavergnebackendwsgi-production.up.railway.app')
 
 # Đường dẫn gốc
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +24,9 @@ INSTALLED_APPS = [
     'entries',
     'safety',
     'dashboards',
+    'itemcode',
+
+    # Third Party
     'rest_framework',
     'corsheaders',
 ]
@@ -63,7 +64,7 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
 # DEBUG = True cho local, False cho server
-DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'False'
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 if DEBUG:
     DATABASES = {
         'default': {
@@ -82,6 +83,13 @@ else:
             'PORT': os.getenv('DB_PORT', '45153'),
         }
     }
+
+if DEBUG:
+    load_dotenv()
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:8000')
+else:
+    load_dotenv()
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://gunicorn-lavergnebackendwsgi-production.up.railway.app')
 
 # Quốc tế hóa
 LANGUAGE_CODE = 'en-us'

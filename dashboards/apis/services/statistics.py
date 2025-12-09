@@ -1,6 +1,6 @@
 import datetime
 from utilities.number_format import format_number
-
+from safety.views import SafetyDurationView
 
 class ProductionStats:
     # dlnc: int

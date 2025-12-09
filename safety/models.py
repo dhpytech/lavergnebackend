@@ -2,9 +2,9 @@ from django.db import models
 
 
 class SafetyTime(models.Model):
-    SAFETY_EVENT_TYPES = [('incident', 'INCIDENT'), ('accident', 'ACCIDENT'),]
+    SAFETY_EVENT_TYPES = [('incident', 'INCIDENT'), ('accident', 'ACCIDENT'), ('sop', 'SOP'),]
 
-    safety_date = models.DateField(verbose_name="Select Date")
+    safety_date = models.DateTimeField(verbose_name="Select Date & Time")
     safety_type = models.CharField(max_length=50, choices=SAFETY_EVENT_TYPES)
     safety_description = models.TextField(verbose_name="Description of Occurrence")
 
