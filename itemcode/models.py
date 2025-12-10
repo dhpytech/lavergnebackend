@@ -9,4 +9,4 @@ class ItemCode(models.Model):
     item_type = models.CharField(max_length=100,choices=ITEM_TYPES)
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.item_name}"
