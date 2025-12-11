@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'safety',
     'dashboards',
     'itemcode',
+    'stoptime',
 
     # Third Party
     'rest_framework',
