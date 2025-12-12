@@ -25,4 +25,8 @@ urlpatterns = [
     path("safety/", include("safety.urls")),
     path("itemcode/", include("itemcode.urls")),
     path("stoptime/", include("stoptime.urls")),
+    path('mail/', include('mail.urls')),
+    path('employee/', include('employee.urls')),
+    path('dlnc_case/', include('dlnc_case.urls')),
+    path('problem/', include('problems.urls')),
 ]

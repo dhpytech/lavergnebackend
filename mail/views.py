@@ -6,5 +6,5 @@ from mail.serializers import MailSerializer
 
 # Create your views here.
 class MailViewSet(viewsets.ModelViewSet):
-    queryset = Mail.object.all().order_by('-mail_address')
+    queryset = Mail.objects.all().order_by('-mail_person')
     serializer_class = MailSerializer
