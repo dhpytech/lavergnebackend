@@ -26,6 +26,10 @@ INSTALLED_APPS = [
     'dashboards',
     'itemcode',
     'stoptime',
+    'problems',
+    'dlnc_case',
+    'mail',
+    'employee',
 
     # Third Party
     'rest_framework',
