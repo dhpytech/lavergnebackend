@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 # Đường dẫn gốc
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Chuyển tất cả app vào thư mục apps
-sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+# sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+APPS_DIR = os.path.join(BASE_DIR, 'apps')
+if APPS_DIR not in sys.path:
+    sys.path.insert(0, APPS_DIR)
 # Bảo mật
 SECRET_KEY = 'your-secret-key'
 ALLOWED_HOSTS = ['*']
