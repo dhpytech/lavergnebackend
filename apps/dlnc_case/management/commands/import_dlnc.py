@@ -1,7 +1,7 @@
 import pandas as pd
 from django.db import transaction, DatabaseError
 from django.core.management.base import BaseCommand
-from dlnc.models import DlncCase
+from dlnc_case.models import DlncCase
 import logging
 
 logger = logging.getLogger(__name__)
