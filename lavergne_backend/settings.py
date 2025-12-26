@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'dlnc_case',
     'mail',
     'employee',
+    'shared',
 
     # Third Party
     'rest_framework',
