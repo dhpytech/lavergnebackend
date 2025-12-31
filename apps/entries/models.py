@@ -3,31 +3,45 @@ from shared.models import TrackingModel
 from shared.constants import ShiftType
 
 
-class MarisInput(TrackingModel):  # Kế thừa TrackingModel để có created_at, updated_at
-    # 1. Header Information
+class BaseProductionEntry(TrackingModel):
     date = models.DateField(db_index=True)
     shift = models.CharField(
-        max_length=10,
+        max_length=50,
         choices=ShiftType.choices,
         default=ShiftType.DAY,
         db_index=True
     )
     employee = models.CharField(max_length=100, db_index=True, null=True)
 
-    # 2. Payload (Lưu dưới dạng JSON để linh hoạt theo Form động)
-    # Bao gồm: productCode, goodPro, dlnc, scrap...
     production_data = models.JSONField(default=list, blank=True)
 
-    # Bao gồm: stopCode, duration, description...
-    stop_time_data = models.JSONField(default=list, blank=True, null=True)
+    class Meta:
+        abstract = True
+        ordering = ['-date', '-created_at']
 
-    # 3. Additional Info
+
+# 1. MARIS:
+class MarisInput(BaseProductionEntry):
+    stop_time_data = models.JSONField(default=list, blank=True, null=True)
+    problem_data = models.JSONField(default=list, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
 
-    class Meta:
-        ordering = ['-date', '-created_at']
+    class Meta(BaseProductionEntry.Meta):
         verbose_name = "Maris Production Entry"
 
-    def __str__(self):
-        # get_shift_display() tự động lấy label 'Day Shift' thay vì 'DAY'
-        return f"{self.date} - {self.get_shift_display()} - {self.employee}"
+
+# 2. METAL: Có thêm số Lô (LOT)
+class MetalInput(BaseProductionEntry):
+    lot_number = models.CharField(max_length=50, db_index=True)
+
+    class Meta(BaseProductionEntry.Meta):
+        verbose_name = "Metal Production Entry"
+
+
+# 3. BAGGING: Có thêm nhân viên thứ 2 và số Lô (LOT)
+class BaggingInput(BaseProductionEntry):
+    employee_2 = models.CharField(max_length=100, db_index=True, null=True)
+    lot_number = models.CharField(max_length=50, db_index=True)
+
+    class Meta(BaseProductionEntry.Meta):
+        verbose_name = "Bagging Production Entry"
