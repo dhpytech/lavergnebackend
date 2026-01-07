@@ -106,23 +106,34 @@ class ProductionStats:
 
     # ==================== So sánh ====================
     def compare_with_previous(self):
-        """Tính % thay đổi với tháng trước và năm trước"""
-        last_month_start = (self.start_date - datetime.timedelta(days=30))
+        last_month_start = self.start_date - datetime.timedelta(days=30)
         last_month_end = self.start_date - datetime.timedelta(days=1)
 
         last_year_start = self.start_date.replace(year=self.start_date.year - 1)
         last_year_end = self.end_date.replace(year=self.end_date.year - 1)
 
-        # Query dữ liệu
-        last_month_qs = self.model_cls.objects.filter(date__range=[last_month_start, last_month_end])
-        last_year_qs = self.model_cls.objects.filter(date__range=[last_year_start, last_year_end])
+        def to_records(qs):
+            return [
+                {
+                    "mainData": r.production_data or [],
+                    "stopTimes": r.stop_time_data or [],
+                }
+                for r in qs
+            ]
 
-        # Ép sang dict sạch (chỉ lấy field JSON nếu có)
-        def to_dict_list(qs):
-            return [getattr(r, "data", r.__dict__) for r in qs]
+        last_month_stats = ProductionStats(
+            to_records(self.model_cls.objects.filter(date__range=[last_month_start, last_month_end])),
+            last_month_start,
+            last_month_end,
+            self.model_cls
+        ).calculate()
 
-        last_month_stats = ProductionStats(to_dict_list(last_month_qs), last_month_start, last_month_end, self.model_cls).calculate()
-        last_year_stats = ProductionStats(to_dict_list(last_year_qs), last_year_start, last_year_end, self.model_cls).calculate()
+        last_year_stats = ProductionStats(
+            to_records(self.model_cls.objects.filter(date__range=[last_year_start, last_year_end])),
+            last_year_start,
+            last_year_end,
+            self.model_cls
+        ).calculate()
 
         current_stats = self.calculate()
         return self._add_comparison(current_stats, last_month_stats, last_year_stats)
