@@ -12,7 +12,6 @@ class BaseProductionEntry(TrackingModel):
         db_index=True
     )
     employee = models.CharField(max_length=100, db_index=True, null=True)
-
     production_data = models.JSONField(default=list, blank=True)
 
     class Meta:
