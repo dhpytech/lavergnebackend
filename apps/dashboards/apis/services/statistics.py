@@ -2,6 +2,7 @@ import datetime
 from utils.number_format import format_number
 from safety.views import SafetyDurationView
 
+
 class ProductionStats:
     # dlnc: int
     # SHIFT_HOURS = 24  # full day default

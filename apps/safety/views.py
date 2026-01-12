@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-# Đảm bảo bạn đã import model SafetyTime từ cùng ứng dụng
+
 from .models import SafetyTime
 
 
