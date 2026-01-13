@@ -8,11 +8,11 @@ from .services.charts import ChartGenerator
 
 class MarisDashboardAPI(APIView):
     def get(self, request):
-        start_date = request.GET.get("start_date")
-        end_date = request.GET.get("end_date")
+        start = request.GET.get("start")
+        end = request.GET.get("end")
         shift = request.GET.get("shift", "Total")
 
-        qs = MarisInput.objects.filter(date__range=[start_date, end_date])
+        qs = MarisInput.objects.filter(date__range=[start, end])
         if shift != "Total":
             qs = qs.filter(shift=shift)
 
@@ -23,15 +23,14 @@ class MarisDashboardAPI(APIView):
                 "date": r.date,
                 "shift": r.shift,
                 "employee": r.employee,
-                # ⚠️ CHUẨN HÓA TÊN FIELD
                 "mainData": r.production_data or [],
                 "stopTimes": r.stop_time_data or [],
             })
 
         stats_service = ProductionStats(
             records,
-            datetime.datetime.strptime(start_date, "%Y-%m-%d").date(),
-            datetime.datetime.strptime(end_date, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(start, "%Y-%m-%d").date(),
+            datetime.datetime.strptime(end, "%Y-%m-%d").date(),
             MarisInput
         )
 
