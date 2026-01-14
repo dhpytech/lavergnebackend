@@ -1,160 +1,64 @@
-import datetime
 from utils.number_format import format_number
-from safety.views import SafetyDurationView
 
 
 class ProductionStats:
-    # dlnc: int
-    # SHIFT_HOURS = 24  # full day default
-    def __init__(self, records, start_date, end_date, model_cls):
-        """
-        records: list of dict (có thể là JSONField trong DB)
-        model_cls: model để query so sánh
-        """
-        self.records = records or []
+    def __init__(self, normalized_data, start_date, end_date):
+        self.data = normalized_data
         self.start_date = start_date
         self.end_date = end_date
-        self.model_cls = model_cls
 
-        # tổng hợp
-        self.production = 0
-        self.scrap = 0
-        self.dlnc = 0
-        self.reject = 0
-        self.screen = 0
-        self.visslab = 0
-        self.stop_time = 0
-        self.order_change = 0
-        self.mech_fail = 0
-        self.repair_time = 0
-        self.shift_time = 0
-        self.num_records = len(records)
-        self.stop_count = 0
-        self.off_days = 0
-        self.mechanical_time = 0
-        self.rate = 0
-    # ==================== Tính toán hiện tại ====================
     def calculate(self):
-        """Tính toán chỉ số cho khoảng thời gian hiện tại"""
-
-        for rec in self.records:
-            rec_dict = dict(rec) if isinstance(rec, dict) else getattr(rec, "__dict__", {})
-
-            main_data = rec_dict.get("mainData") or []
-            stop_times = rec_dict.get("stopTimes") or []
-
-            for item in main_data:
-                self.production += int(item.get("goodPro", 0) or 0) + int(item.get("dlnc", 0) or 0)
-                self.scrap += int(item.get("scrap", 0) or 0)
-                self.dlnc += int(item.get("dlnc", 0) or 0)
-                self.reject += int(item.get("reject", 0) or 0)
-                self.screen += int(item.get("screen", 0) or 0)
-                self.visslab += int(item.get("visslab", 0) or 0)
-
-                # self.rate += int(item.get("rate", 0) or 0)
-            for stop in stop_times:
-                self.stop_count += 1
-                self.stop_time += float(stop.get("hour", 0) or 0)
-                if stop.get("stopTime") == "# ORDER CHANGE":
-                    self.order_change += 1
-                elif stop.get("stopTime") == "# OF MECHANICAL FAILURE":
-                    self.mech_fail += 1
-                elif stop.get("stopTime") == "MECHANICAL/ELECTRICAL FAILURE":
-                    self.mechanical_time += float(stop.get("hour", 0) or 0)
-                else:
-                    self.repair_time += float(stop.get("hour", 0) or 0)
-
-                if stop.get("stopTime") == "HOLIDAY" or stop.get("stopTime") == "WEEKEND OFF":
-                    self.off_days += 1
-        return self._format_result()
-
-    def _format_result(self):
-        self.shift_time = (self.num_records-self.off_days) * 12
-        used_percent = (self.shift_time - self.repair_time) / self.shift_time if self.shift_time > 0 else 0
-        yield_percent = (
-            self.production/(self.production + self.reject + self.scrap + self.screen)
-            if (self.production + self.reject + self.scrap + self.screen) > 0
-            else 0
-        )
-        net_hour = ((self.production + self.reject + self.scrap + self.screen + self.visslab) /
-                    (self.shift_time - self.repair_time) if (self.shift_time - self.repair_time) > 0 else 0)
-
-        scrap_production = round(((self.scrap+self.screen)/self.production) * 100 if self.production > 0 else 0, 2)
-
-        mttr = self.mechanical_time/self.mech_fail if self.mech_fail > 0 else 0
-        mtbf = self.shift_time / self.mech_fail if self.mech_fail > 0 else self.shift_time
-
-        # Tinh Toán Rate Theo Bình Quân Ngày
-        oee = used_percent * yield_percent # Nhân thêm cho Rate
-
-        return {
-            "PRODUCTION (KG)": self.production,
-            "SCRAP (KG)": self.scrap + self.screen,
-            "DL/NC (KG)": self.dlnc,
-            "SCRAP/PRODUCTION (%)": format_number(scrap_production),
-            "STOP TIME (HOUR)": self.repair_time,
-            "NUMBER OF ORDER CHANGE": self.order_change,
-            "NUMBER OF MECHANICAL FAILURE": self.mech_fail,
-            "NET/HOUR (KG/HOUR)": round(net_hour, 3),
-            "UTILISATION (%)": f"{used_percent:.2%}",
-            "YIELD (%)": f"{yield_percent:.2%}",
-            "OEE (%)": f"{oee:.2%}",
-            "MTTR (HOUR)": round(mttr, 2),
-            "MTBF (HOUR)": round(mtbf, 2),
-            "INCIDENT (TIMES)": 0,
-            "ACCIDENT (TIMES)": 0,
+        p = {
+            "prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "visslab": 0,
+            "stop_hr": 0, "order_chg": 0, "mech_fail": 0, "mech_hr": 0, "off_days": 0
         }
 
-    # ==================== So sánh ====================
-    def compare_with_previous(self):
-        last_month_start = self.start_date - datetime.timedelta(days=30)
-        last_month_end = self.start_date - datetime.timedelta(days=1)
+        for d in self.data:
+            p["prod"] += d["goodPro"] + d["dlnc"]
+            p["scrap"] += d["scrap"]
+            p["dlnc"] += d["dlnc"]
+            p["reject"] += d["reject"]
+            p["visslab"] += d["visslab"]
 
-        last_year_start = self.start_date.replace(year=self.start_date.year - 1)
-        last_year_end = self.end_date.replace(year=self.end_date.year - 1)
+            for s in d["stopTimes"]:
+                hr = float(s.get("hour") or 0)
+                st = s.get("stopTime", "")
+                if st in ["HOLIDAY", "WEEKEND OFF"]:
+                    p["off_days"] += 1
+                elif st == "# ORDER CHANGE":
+                    p["order_chg"] += 1
+                elif st == "# OF MECHANICAL FAILURE":
+                    p["mech_fail"] += 1
+                elif st == "MECHANICAL/ELECTRICAL FAILURE":
+                    p["mech_hr"] += hr
+                    p["stop_hr"] += hr
+                else:
+                    p["stop_hr"] += hr
 
-        def to_records(qs):
-            return [
-                {
-                    "mainData": r.production_data or [],
-                    "stopTimes": r.stop_time_data or [],
-                }
-                for r in qs
-            ]
+        # Tính toán tỷ lệ
+        num_shifts = len(set((d["date"], d["shift"]) for d in self.data))
+        total_hr = (num_shifts - p["off_days"]) * 12
 
-        last_month_stats = ProductionStats(
-            to_records(self.model_cls.objects.filter(date__range=[last_month_start, last_month_end])),
-            last_month_start,
-            last_month_end,
-            self.model_cls
-        ).calculate()
+        used_pct = (total_hr - p["stop_hr"]) / total_hr if total_hr > 0 else 0
+        yield_pct = p["prod"] / (p["prod"] + p["reject"] + p["scrap"]) if (p["prod"] + p["reject"] + p[
+            "scrap"]) > 0 else 0
+        net_hr = (p["prod"] + p["reject"] + p["scrap"] + p["visslab"]) / (total_hr - p["stop_hr"]) if (total_hr - p[
+            "stop_hr"]) > 0 else 0
 
-        last_year_stats = ProductionStats(
-            to_records(self.model_cls.objects.filter(date__range=[last_year_start, last_year_end])),
-            last_year_start,
-            last_year_end,
-            self.model_cls
-        ).calculate()
-
-        current_stats = self.calculate()
-        return self._add_comparison(current_stats, last_month_stats, last_year_stats)
-
-    def _add_comparison(self, current, last_month, last_year):
-        def calc_change(cur, prev):
-            if prev == 0:
-                return 0
-            return round(((cur - prev) / prev) * 100, 2)
-
-        result = {}
-        for key, cur_val in current.items():
-            if isinstance(cur_val, (int, float)):
-                lm_val = last_month.get(key, 0)
-                ly_val = last_year.get(key, 0)
-                result[key] = {
-                    "value": cur_val,
-                    "lastMonth": f"{calc_change(cur_val, lm_val)}%",
-                    "lastYear": f"{calc_change(cur_val, ly_val)}%",
-                }
-            else:
-                result[key] = {"value": cur_val, "lastMonth": "0%", "lastYear": "0%"}
-        return result
+        return {
+            "PRODUCTION (KG)": p["prod"],
+            "SCRAP (KG)": p["scrap"],
+            "DL/NC (KG)": p["dlnc"],
+            "SCRAP/PRODUCTION (%)": round((p["scrap"] / p["prod"]) * 100, 2) if p["prod"] > 0 else 0,
+            "STOP TIME (HOUR)": round(p["stop_hr"], 2),
+            "NUMBER OF ORDER CHANGE": p["order_chg"],
+            "NUMBER OF MECHANICAL FAILURE": p["mech_fail"],
+            "NET/HOUR (KG/HOUR)": round(net_hr, 2),
+            "UTILISATION (%)": f"{used_pct:.2%}",
+            "YIELD (%)": f"{yield_pct:.2%}",
+            "OEE (%)": f"{(used_pct * yield_pct):.2%}",
+            "MTTR (HOUR)": round(p["mech_hr"] / p["mech_fail"], 2) if p["mech_fail"] > 0 else 0,
+            "MTBF (HOUR)": round(total_hr / p["mech_fail"], 2) if p["mech_fail"] > 0 else total_hr,
+            "INCIDENT (TIMES)": 0,  # Sẽ lấy từ SafetyQuery
+            "ACCIDENT (TIMES)": 0,
+        }

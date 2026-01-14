@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'mail',
     'employee',
     'shared',
+    'utils',
 
     # Third Party
     'django_filters',

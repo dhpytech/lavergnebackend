@@ -1,38 +1,31 @@
-from django.db.models import Sum
-
+# dashboards/services/charts.py
 
 class ChartGenerator:
     @staticmethod
-    def generate(qs):
-        production_data = []
-
-        for obj in qs:
-            for item in (obj.production_data or []):
-                production_data.append({
-                    "productCode": item.get("productCode"),
-                    "production": int(item.get("goodPro", 0)) + int(item.get("dlnc", 0))
-                })
-
+    def by_product(normalized_data):
+        """Tạo dữ liệu cho biểu đồ tròn (Pie Chart) hoặc cột (Bar Chart) theo sản phẩm"""
         aggregated = {}
-        for row in production_data:
-            code = row["productCode"]
-            if not code:
-                continue
-            aggregated[code] = aggregated.get(code, 0) + row["production"]
+        for d in normalized_data:
+            code = d["productCode"]
+            if not code: continue
+            # Tổng hợp Sản lượng = Good + DLNC
+            aggregated[code] = aggregated.get(code, 0) + d["goodPro"] + d["dlnc"]
 
-        total = sum(aggregated.values()) or 1
-
-        chart_data = [
-            {
-                "name": k,
-                "value": v,
-                "percent": round(v / total, 2)
-            }
-            for k, v in aggregated.items()
+        # Format lại cho Frontend (Recharts)
+        return [
+            {"name": k, "value": v}
+            for k, v in sorted(aggregated.items(), key=lambda x: -x[1])
         ]
-        chart_data.sort(key=lambda x: -x["value"])
 
-        return {
-            "production_pie": chart_data,
-            "production_bar": chart_data,
-        }
+    @staticmethod
+    def by_date(normalized_data):
+        """Tạo dữ liệu cho biểu đồ đường (Line Chart) theo tiến độ thời gian"""
+        daily = {}
+        for d in normalized_data:
+            date_str = d["date"].strftime("%d/%m")
+            daily[date_str] = daily.get(date_str, 0) + d["goodPro"]
+
+        return [
+            {"date": k, "production": v}
+            for k, v in daily.items()
+        ]
