@@ -1,41 +1,56 @@
+# dashboards/apis/maris_api.py
 import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from entries.models import MarisInput
-from .services.statistics import ProductionStats
-from .services.charts import ChartGenerator
+
+from dashboards.queries.maris_query import MarisQuery
+from dashboards.services.aggregators import ProductionAggregator
+from dashboards.services.statistics import ProductionStats
+from dashboards.services.charts import ChartGenerator
 
 
 class MarisDashboardAPI(APIView):
+
     def get(self, request):
         start = request.GET.get("start")
         end = request.GET.get("end")
-        shift = request.GET.get("shift", "Total")
+        shift = request.GET.get("shift", "total")
+        product = request.GET.get("productCode", "total")
 
-        qs = MarisInput.objects.filter(date__range=[start, end])
-        if shift != "Total":
-            qs = qs.filter(shift=shift)
+        if not start or not end:
+            return Response(
+                {"error": "start and end are required"},
+                status=400
+            )
+
+        start_date = datetime.date.fromisoformat(start)
+        end_date = datetime.date.fromisoformat(end)
+
+        qs = MarisQuery.fetch_records(
+            start_date, end_date, shift, product
+        )
 
         records = []
         for r in qs:
-            records.append({
-                "id": r.id,
-                "date": r.date,
-                "shift": r.shift,
-                "employee": r.employee,
-                "mainData": r.production_data or [],
-                "stopTimes": r.stop_time_data or [],
-            })
+            for item in r.production_data:
+                records.append(
+                    ProductionAggregator.normalize_record({
+                        "date": r.date,
+                        "shift": r.shift,
+                        "employee": r.employee,
+                        "mainData": item,
+                        "stopTimes": r.stop_time_data or [],
+                        "problems": r.problem_data or []
+                    })
+                )
 
-        stats_service = ProductionStats(
-            records,
-            datetime.datetime.strptime(start, "%Y-%m-%d").date(),
-            datetime.datetime.strptime(end, "%Y-%m-%d").date(),
-            MarisInput
-        )
+        stats = ProductionStats(records)
 
         return Response({
-            "stats": stats_service.compare_with_previous(),
-            "charts": ChartGenerator.generate(qs),
-            "results": records
+            "kpis": stats.kpis(),
+            "problems": stats.problems(),
+            "charts": {
+                "byDate": ChartGenerator.by_date(records)
+            },
+            "records": records
         })

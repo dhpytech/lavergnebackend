@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.dashboards.apis.maris_api import MarisDashboardAPI
+from .apis.maris_api import MarisDashboardAPI
 
 urlpatterns = [
     path("maris/", MarisDashboardAPI.as_view(), name="maris-dashboard"),
