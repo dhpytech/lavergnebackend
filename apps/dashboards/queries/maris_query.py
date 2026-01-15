@@ -15,7 +15,7 @@ class FetchParams:
     start: date
     end: date
     shift: ShiftType = "total"
-    product_code: ProductCode = "total"
+    # product_code: ProductCode = "total"
 
 
 class MarisQuery:
@@ -28,11 +28,12 @@ class MarisQuery:
         if p.shift and p.shift.lower() not in EXCLUDE_VALUES:
             qs = qs.filter(shift__iexact=p.shift)
 
-        if p.product_code.lower() not in EXCLUDE_VALUES:
-            qs = qs.filter(production_data__contains=[{"productCode": p.product_code}])
+        # if p.product_code.lower() not in EXCLUDE_VALUES:
+        #     qs = qs.filter(production_data__contains=[{"productCode": p.product_code}])
 
         # 3. Optimize Selection
         return qs.only(
             "id", "date", "shift", "employee",
             "production_data", "stop_time_data", "problem_data"
         ).order_by("-date")
+

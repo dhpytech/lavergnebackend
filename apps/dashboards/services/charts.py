@@ -1,31 +1,39 @@
-# dashboards/services/charts.py
+from collections import defaultdict
 
-class ChartGenerator:
+
+class ChartService:
     @staticmethod
-    def by_product(normalized_data):
-        """Tạo dữ liệu cho biểu đồ tròn (Pie Chart) hoặc cột (Bar Chart) theo sản phẩm"""
-        aggregated = {}
-        for d in normalized_data:
-            code = d["productCode"]
-            if not code: continue
-            # Tổng hợp Sản lượng = Good + DLNC
-            aggregated[code] = aggregated.get(code, 0) + d["goodPro"] + d["dlnc"]
+    def get_production_charts(records):
+        product_map = defaultdict(float)
+        daily_map = defaultdict(float)
 
-        # Format lại cho Frontend (Recharts)
-        return [
-            {"name": k, "value": v}
-            for k, v in sorted(aggregated.items(), key=lambda x: -x[1])
+        for r in records:
+            # Logic: Value = GoodPro + DLNC
+            val = float(r.get("goodPro") or 0) + float(r.get("dlnc") or 0)
+            p_code = r.get("productCode", "N/A")
+            date_str = r.get("date")
+
+            product_map[p_code] += val
+            daily_map[date_str] += val
+
+        total_all = sum(product_map.values())
+
+        # Pie Chart: Trả về phần trăm (%)
+        pie_data = [
+            {
+                "name": k,
+                "value": round((v / total_all * 100), 2) if total_all > 0 else 0
+            }
+            for k, v in product_map.items()
         ]
 
-    @staticmethod
-    def by_date(normalized_data):
-        """Tạo dữ liệu cho biểu đồ đường (Line Chart) theo tiến độ thời gian"""
-        daily = {}
-        for d in normalized_data:
-            date_str = d["date"].strftime("%d/%m")
-            daily[date_str] = daily.get(date_str, 0) + d["goodPro"]
-
-        return [
-            {"date": k, "production": v}
-            for k, v in daily.items()
+        # Column Chart: Trả về giá trị thực tế (KG)
+        column_data = [
+            {"name": k, "volume": round(v, 2)}
+            for k, v in sorted(daily_map.items())
         ]
+
+        return {
+            "pie_chart": pie_data,
+            "column_chart": column_data
+        }
