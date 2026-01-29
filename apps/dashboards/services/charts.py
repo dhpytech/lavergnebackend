@@ -30,7 +30,7 @@ class ChartService:
         # Column Chart: Trả về giá trị thực tế (KG)
         column_data = [
             {"name": k, "volume": round(v, 2)}
-            for k, v in sorted(daily_map.items())
+            for k, v in sorted(product_map.items())
         ]
 
         return {

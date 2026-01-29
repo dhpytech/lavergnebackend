@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import MarisInput, MetalInput, BaggingInput
 
+
 class BaseProductionSerializer(serializers.ModelSerializer):
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
 
