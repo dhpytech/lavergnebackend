@@ -2,19 +2,24 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
-# Đường dẫn gốc
+# 1. Load môi trường ngay lập tức
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Chuyển tất cả app vào thư mục apps
-# sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+
+# 2. Quản lý Apps
 APPS_DIR = os.path.join(BASE_DIR, 'apps')
 if APPS_DIR not in sys.path:
     sys.path.insert(0, APPS_DIR)
-# Bảo mật
-SECRET_KEY = 'your-secret-key'
+
+# 3. Bảo mật
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secret-key')
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 ALLOWED_HOSTS = ['*']
 
-# Ứng dụng
+# 4. Apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,19 +28,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Thêm các app của bạn ở đây
-    'accounts',
-    'entries',
-    'safety',
-    'dashboards',
-    'itemcode',
-    'stoptime',
-    'problems',
-    'dlnc_case',
-    'mail',
-    'employee',
-    'shared',
-    'utils',
+    # My Apps
+    'accounts', 'entries', 'safety', 'dashboards', 'itemcode',
+    'stoptime', 'problems', 'dlnc_case', 'mail', 'employee',
+    'shared', 'utils',
 
     # Third Party
     'django_filters',
@@ -43,24 +39,25 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+# 5. MIDDLEWARE (QUAN TRỌNG: Thứ tự này mới fix được lỗi CORS trong ảnh của bạn)
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Phục vụ file tĩnh
+    'corsheaders.middleware.CorsMiddleware',       # Phải nằm trên CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = ('lavergne_backend.urls')
+ROOT_URLCONF = 'lavergne_backend.urls' # Đã bỏ dấu ngoặc đơn dư thừa
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Nếu bạn dùng template
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -75,80 +72,47 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
-# DATABASE
-# DEBUG = True cho local, False cho server
-DEBUG = os.getenv('DJANGO_DEBUG', 'false') == 'False'
-if DEBUG:
+# 6. DATABASE (Tự động nhận Public URL từ Railway cho máy local)
+db_url = os.getenv('DATABASE_PUBLIC_URL') or os.getenv('DATABASE_URL')
+
+if db_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=db_url,
+            conn_max_age=600,
+            ssl_require=not DEBUG
+        )
+    }
+else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.getenv('DB_NAME', 'railway'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'ETaUowiMGcnEYuGyvPTZzTsCyINlDxYM'),
-            'HOST': os.getenv('DB_HOST', 'maglev.proxy.rlwy.net'),
-            'PORT': os.getenv('DB_PORT', '45153'),
-        }
-    }
 
-if DEBUG:
-    load_dotenv()
-    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:8000')
-else:
-    load_dotenv()
-    FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://gunicorn-lavergnebackendwsgi-production.up.railway.app')
-
-# Quốc tế hóa
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Ho_Chi_Minh'
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
-
-# STATIC
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# MEDIA (nếu dùng upload ảnh)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-CORS_ALLOW_ALL_ORIGINS = True
+# 7. CORS & CSRF (Fix triệt để lỗi đỏ trong Console)
+CORS_ALLOW_ALL_ORIGINS = True # Bật cái này để thông suốt trước
 CORS_ALLOW_CREDENTIALS = True
 
-# Quan trọng: Thêm cấu hình này để trình duyệt chấp nhận
 CSRF_TRUSTED_ORIGINS = [
     "https://lavergnefrontend-production.up.railway.app",
     "https://gunicorn-lavergnebackendwsgi-production.up.railway.app",
 ]
-# CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://lavergnefrontend-production.up.railway.app",
 
-]
+# 8. Quốc tế hóa
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
+USE_I18N = True
+USE_TZ = True
 
-# REST Framework
+# 9. Static & Media
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static'] if os.path.exists(BASE_DIR / 'static') else []
+
+# 10. REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend'
-    ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
-
-ALLOWED_HOSTS = ['*']
