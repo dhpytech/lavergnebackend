@@ -41,9 +41,9 @@ INSTALLED_APPS = [
 
 # 5. MIDDLEWARE (QUAN TRỌNG: Thứ tự này mới fix được lỗi CORS trong ảnh của bạn)
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Phục vụ file tĩnh
-    'corsheaders.middleware.CorsMiddleware',       # Phải nằm trên CommonMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -92,12 +92,17 @@ else:
     }
 
 # 7. CORS & CSRF (Fix triệt để lỗi đỏ trong Console)
-CORS_ALLOW_ALL_ORIGINS = True # Bật cái này để thông suốt trước
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "https://lavergnefrontend-production.up.railway.app",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://lavergnefrontend-production.up.railway.app",
     "https://gunicorn-lavergnebackendwsgi-production.up.railway.app",
+    "https://lavergnefrontend-production.up.railway.app",
 ]
 
 # 8. Quốc tế hóa
