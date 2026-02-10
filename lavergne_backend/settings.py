@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
 # DEBUG = True cho local, False cho server
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'False'
+DEBUG = os.getenv('DJANGO_DEBUG', 'false') == 'False'
 if DEBUG:
     DATABASES = {
         'default': {
@@ -122,13 +122,19 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# Quan trọng: Thêm cấu hình này để trình duyệt chấp nhận
+CSRF_TRUSTED_ORIGINS = [
+    "https://lavergnefrontend-production.up.railway.app",
+    "https://gunicorn-lavergnebackendwsgi-production.up.railway.app",
+]
 # CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://lavergnefrontend-production.up.railway.app",
 ]
-CORS_ALLOW_CREDENTIALS = True
-
 
 # REST Framework
 REST_FRAMEWORK = {
