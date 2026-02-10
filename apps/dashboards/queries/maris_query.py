@@ -36,4 +36,3 @@ class MarisQuery:
             "id", "date", "shift", "employee",
             "production_data", "stop_time_data", "problem_data"
         ).order_by("-date")
-
