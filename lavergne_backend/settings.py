@@ -134,6 +134,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://lavergnefrontend-production.up.railway.app",
+
 ]
 
 # REST Framework
@@ -150,11 +151,5 @@ REST_FRAMEWORK = {
     ],
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://gunicorn-lavergnebackendwsgi-production.up.railway.app",
-]
 
-CORS_ALLOW_ALL_ORIGINS = True
-
+ALLOWED_HOSTS = ['*']
