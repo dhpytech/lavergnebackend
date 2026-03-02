@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'utils',
 
     # Third Party
-    # 'django_filters',
+    'django_filters',
     'rest_framework',
     'corsheaders',
 ]
@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = ('lavergne_backend.urls')
+ROOT_URLCONF = 'lavergne_backend.urls'
 
 TEMPLATES = [
     {
