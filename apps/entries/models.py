@@ -11,7 +11,7 @@ class BaseProductionEntry(TrackingModel):
         default=ShiftType.DAY,
         db_index=True
     )
-    employee = models.CharField(max_length=100, db_index=True, null=True)
+    employee = models.CharField(max_length=100, db_index=True, null=True, blank=True)
     production_data = models.JSONField(default=list, blank=True)
 
     class Meta:
