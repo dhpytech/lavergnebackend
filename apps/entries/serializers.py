@@ -11,13 +11,7 @@ class BaseProductionSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
     def validate_production_data(self, value):
-        if not isinstance(value, list) or len(value) == 0:
-            raise serializers.ValidationError("At least one production record is required.")
-
         for item in value:
-            if 'productCode' not in item or not item['productCode']:
-                raise serializers.ValidationError("Product Code is required for all rows.")
-            # Sử dụng get() để tránh lỗi KeyError nếu FE gửi thiếu field
             if float(item.get('goodPro', 0)) < 0:
                 raise serializers.ValidationError("Quantity must be a positive number.")
         return value
