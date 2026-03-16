@@ -112,7 +112,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             for stop in getattr(rec, 'stop_time_data', []):
 
                 REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
-                reason = stop.get('stopTime')
+                reason = stop.get('stopTime', 'Others')
 
                 if reason not in REASON_KEYS:
                     matrix["downtime"][reason][day_idx] += float(stop.get('hour', 0) or 0)
