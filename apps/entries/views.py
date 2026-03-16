@@ -32,11 +32,22 @@ class BaggingInputViewSet(viewsets.ModelViewSet):
     queryset = BaggingInput.objects.all()
     serializer_class = BaggingInputSerializer
 
+def get_val(data, *keys, default=0.0):
+    for key in keys:
+        val = data.get(key)
+        if val is not None and val != '':
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                continue
+    return float(default)
+
 
 class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MarisInput.objects.all().order_by('date')
     serializer_class = MarisInputSerializer
     filterset_class = MarisInputFilter
+
 
     def list(self, request, *args, **kwargs):
         shift_param = request.query_params.get('shift', 'total').lower()
@@ -110,31 +121,36 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
 
             # Stop Time (Downtime)
             for stop in getattr(rec, 'stop_time_data', []):
-
                 REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
-                reason = stop.get('stopTime', 'Others')
+
+                # Lấy lý do dừng, ưu tiên 'stopTime' rồi đến 'stopCode'
+                reason = stop.get('stopTime') or stop.get('stopCode') or 'Unknown'
+
+                # Lấy giá trị thời gian (check cả duration và hour để an toàn)
+                duration_val = get_val(stop, 'duration', 'hour')
 
                 if reason not in REASON_KEYS:
-                    matrix["downtime"][reason][day_idx] += float(stop.get('hour', 0) or 0)
-                    matrix["summary"]["stop_time_total"][day_idx] += float(stop.get('hour', 0) or 0)
+                    matrix["downtime"][reason][day_idx] += duration_val
+                    matrix["summary"]["stop_time_total"][day_idx] += duration_val
                 else:
-                    matrix["numtime"][reason][day_idx] += float(stop.get('hour', 0) or 0)
+                    matrix["numtime"][reason][day_idx] += duration_val
 
-                if (matrix["summary"]["stop_time_total"][day_idx] == matrix["summary"]["shift_time"][day_idx]
-                        and matrix["summary"]["shift_time"][day_idx] != 0):
-                    matrix["summary"]["stop_time_total"][day_idx] = len(matrix["operators"]["operator"][day_idx])*12
-                    matrix["summary"]["shift_time"][day_idx] = len(matrix["operators"]["operator"][day_idx])*12
+                # Kiểm tra logic shift_time (Tối ưu hóa so sánh số thực)
+                shift_time = matrix["summary"]["shift_time"][day_idx]
+                stop_total = matrix["summary"]["stop_time_total"][day_idx]
 
-            # Problems
+                if shift_time != 0 and abs(stop_total - shift_time) < 1e-9:
+                    # Giả định len(...) * 12 là logic cố định của bạn
+                    standard_time = len(matrix["operators"]["operator"][day_idx]) * 12
+                    matrix["summary"]["stop_time_total"][day_idx] = standard_time
+                    matrix["summary"]["shift_time"][day_idx] = standard_time
+
+            # --- Xử lý problem_data ---
             for prob in getattr(rec, 'problem_data', []):
-                p_type = prob.get('problem', 'Others')
-                matrix["problems"][p_type][day_idx] += float(prob.get('hour', 0) or 0)
-
-        for key in matrix["operators"]:
-            for day_idx in range(last_day):
-                names_list = matrix["operators"][key][day_idx]
-                # Chuyển từ mảng [P1, P2] thành chuỗi "P1 - P2"
-                matrix["operators"][key][day_idx] = " - ".join(names_list) if names_list else ""
+                p_type = prob.get('problem') or 'Others'
+                # Xử lý tương tự: check cả 'hour' và 'duration' do DB không đồng nhất
+                prob_val = get_val(prob, 'hour', 'duration')
+                matrix["problems"][p_type][day_idx] += prob_val
 
         mech_times_total = 0
         mech_hours_total = 0
