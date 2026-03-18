@@ -9,14 +9,8 @@ from ..services.aggregators import ProductionAggregator
 
 
 class MarisAuditAPI(APIView):
-    """
-    API cung cấp dữ liệu chi tiết (Audit Log) cho Modal khi người dùng
-    tương tác với các chỉ số hoặc biểu đồ trên Dashboard.
-    """
-
     def get(self, request):
         try:
-            # 1. Tiếp nhận tham số từ request
             start_p = request.GET.get("start")
             end_p = request.GET.get("end")
             shift = request.GET.get("shift", "total")
@@ -28,15 +22,12 @@ class MarisAuditAPI(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # 2. Truy vấn dữ liệu thô thông qua Query Layer
             qs = MarisQuery.fetch_records(
-                date.fromisoformat(start_p),date.fromisoformat(end_p),shift
+                date.fromisoformat(start_p), date.fromisoformat(end_p), shift, product_code
             )
 
-            # 3. Chuẩn hóa dữ liệu thông qua Aggregator đã thống nhất
             records = ProductionAggregator.normalize(qs)
 
-            # 4. Lọc bổ sung theo Product Code nếu có yêu cầu từ biểu đồ
             if product_code:
                 records = [r for r in records if r['productCode'] == product_code]
 

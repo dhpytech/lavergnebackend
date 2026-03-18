@@ -32,6 +32,7 @@ class BaggingInputViewSet(viewsets.ModelViewSet):
     queryset = BaggingInput.objects.all()
     serializer_class = BaggingInputSerializer
 
+
 def get_val(data, *keys, default=0.0):
     for key in keys:
         val = data.get(key)
@@ -47,7 +48,6 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MarisInput.objects.all().order_by('date')
     serializer_class = MarisInputSerializer
     filterset_class = MarisInputFilter
-
 
     def list(self, request, *args, **kwargs):
         shift_param = request.query_params.get('shift', 'total').lower()
@@ -148,7 +148,6 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             # --- Xử lý problem_data ---
             for prob in getattr(rec, 'problem_data', []):
                 p_type = prob.get('problem') or 'Others'
-                # Xử lý tương tự: check cả 'hour' và 'duration' do DB không đồng nhất
                 prob_val = get_val(prob, 'hour', 'duration')
                 matrix["problems"][p_type][day_idx] += prob_val
 
@@ -164,30 +163,24 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             day_mech_hours = matrix["downtime"].get(KEY_HOURS, [0] * last_day)[i]
             day_mech_times = matrix["numtime"].get(KEY_TIMES, [0] * last_day)[i]
 
-            # Cộng dồn cho tổng cả tháng
             mech_hours_total += day_mech_hours
             mech_times_total += day_mech_times
 
-            # Net/Hour = Sản lượng / (Thời gian chạy thực tế)
             run_time = sh_time - s_total
             if run_time > 0:
                 matrix["summary"]["net_hour"][i] = round((p_total + w_total) / run_time, 2)
                 matrix["summary"]["percent_used"][i] = round((run_time / sh_time) * 100, 2)
 
-            # % Yield = Sản lượng / (Sản lượng + Phế phẩm)
             if (p_total + w_total) > 0:
                 matrix["summary"]["percent_yield"][i] = round((p_total / (p_total + w_total)) * 100, 2)
 
         summary = matrix["summary"]
 
-        # Tính các giá trị Tổng thô (SUM)
         t_prod = sum(summary["production_total"])
         t_waste = sum(summary["scrap_total"])
         t_stop = sum(summary["stop_time_total"])
         t_shift = sum(summary["shift_time"])
 
-        # Tính toán các chỉ số Hiệu suất theo tháng (Weighted Average)
-        # Không dùng sum() các cột % vì sẽ ra con số hàng nghìn % sai lệch
         t_run_time = t_shift - t_stop
 
         final_mttr = round(mech_hours_total / mech_times_total, 2) if mech_times_total > 0 else 0

@@ -8,17 +8,17 @@ class ChartService:
         daily_map = defaultdict(float)
 
         for r in records:
-            # Logic: Value = GoodPro + DLNC
             val = float(r.get("goodPro") or 0) + float(r.get("dlnc") or 0)
             p_code = r.get("productCode", "N/A")
             date_str = r.get("date")
 
+            if not p_code or str(p_code).strip() == "":
+                continue
+
             product_map[p_code] += val
             daily_map[date_str] += val
-
         total_all = sum(product_map.values())
 
-        # Pie Chart: Trả về phần trăm (%)
         pie_data = [
             {
                 "name": k,
