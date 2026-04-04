@@ -16,10 +16,6 @@ class MarisInputViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = MarisInputFilter
 
-    # filterset_fields = {
-    #     'date': ['gte', 'lte'],
-    # }
-
 
 # 2. Metal ViewSet
 class MetalInputViewSet(viewsets.ModelViewSet):
@@ -61,12 +57,10 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
 
         _, last_day = calendar.monthrange(year, month)
 
-        # 1. Lấy dữ liệu qua Filter
         query_params = request.query_params.copy()
         query_params.update({'start': f"{year}-{month:02d}-01", 'end': f"{year}-{month:02d}-{last_day}"})
         filtered_qs = MarisInputFilter(query_params, queryset=self.get_queryset()).qs
 
-        # 2. Khởi tạo Ma trận (Index 0 = Ngày 1)
         matrix = {
             'summary': {
                 "production_total": [0.0] * last_day,
@@ -107,45 +101,36 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
 
             # Production & Scrap
             for p in rec.production_data:
-                sku = p.get('productCode', 'N/A')
+                sku = p.get('productCode', 'Others')
                 matrix["production"][sku][day_idx] += float(p.get('goodPro', 0))
                 matrix["reject"][sku][day_idx] += float(p.get('reject', 0))
                 matrix["scrap"][sku][day_idx] += float(p.get('scrap', 0))
-                matrix["screen"][sku][day_idx] += float(p.get('screen', 0))
+                matrix["screen"][sku][day_idx] += float(p.get('screen', 0)) + float(p.get('screenChanger', 0))
                 matrix["visslab"][sku][day_idx] += float(p.get('visslab', 0))
                 matrix["dlnc"][sku][day_idx] += float(p.get('dlnc', 0))
 
                 matrix["summary"]["production_total"][day_idx] += float(p.get('goodPro', 0)) + float(p.get('dlnc', 0))
-                matrix["summary"]["scrap_total"][day_idx] += (float(p.get('reject', 0)) + float(p.get('scrap', 0)) +
-                                                              float(p.get('screen', 0)))
+                matrix["summary"]["scrap_total"][day_idx] += (float(p.get('scrap', 0)) + float(p.get('screen', 0)))
 
-            # Stop Time (Downtime)
             for stop in getattr(rec, 'stop_time_data', []):
-                REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
-
-                # Lấy lý do dừng, ưu tiên 'stopTime' rồi đến 'stopCode'
                 reason = stop.get('stopTime') or stop.get('stopCode') or 'Unknown'
-
-                # Lấy giá trị thời gian (check cả duration và hour để an toàn)
                 duration_val = get_val(stop, 'duration', 'hour')
 
+                REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
                 if reason not in REASON_KEYS:
                     matrix["downtime"][reason][day_idx] += duration_val
                     matrix["summary"]["stop_time_total"][day_idx] += duration_val
                 else:
                     matrix["numtime"][reason][day_idx] += duration_val
 
-                # Kiểm tra logic shift_time (Tối ưu hóa so sánh số thực)
                 shift_time = matrix["summary"]["shift_time"][day_idx]
                 stop_total = matrix["summary"]["stop_time_total"][day_idx]
 
                 if shift_time != 0 and abs(stop_total - shift_time) < 1e-9:
-                    # Giả định len(...) * 12 là logic cố định của bạn
                     standard_time = len(matrix["operators"]["operator"][day_idx]) * 12
                     matrix["summary"]["stop_time_total"][day_idx] = standard_time
                     matrix["summary"]["shift_time"][day_idx] = standard_time
 
-            # --- Xử lý problem_data ---
             for prob in getattr(rec, 'problem_data', []):
                 p_type = prob.get('problem') or 'Others'
                 prob_val = get_val(prob, 'hour', 'duration')
@@ -153,8 +138,8 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
 
         mech_times_total = 0
         mech_hours_total = 0
-        for i in range(last_day):
 
+        for i in range(last_day):
             p_total = matrix["summary"]["production_total"][i]
             w_total = matrix["summary"]["scrap_total"][i]
             s_total = matrix["summary"]["stop_time_total"][i]
@@ -167,6 +152,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             mech_times_total += day_mech_times
 
             run_time = sh_time - s_total
+
             if run_time > 0:
                 matrix["summary"]["net_hour"][i] = round((p_total + w_total) / run_time, 2)
                 matrix["summary"]["percent_used"][i] = round((run_time / sh_time) * 100, 2)

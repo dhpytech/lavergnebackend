@@ -77,6 +77,7 @@ WSGI_APPLICATION = 'lavergne_backend.wsgi.application'
 
 # DATABASE
 DEBUG = False
+
 if DEBUG:
     DATABASES = {
         'default': {

@@ -8,20 +8,26 @@ class ProductionStats:
         self.safety_ly = safety_ly
 
     def _get_raw(self, data, safety_vals):
-        """Logic tính toán gốc của bạn"""
-        p = {
-            "prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "visslab": 0,
-            "stop_hr": 0, "order_chg": 0, "mech_fail": 0, "mech_hr": 0, "off_days": 0
-        }
+        p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
+             "mech_fail": 0, "mech_hr": 0, "off_days": 0}
+
+        active_shifts = set()
         for d in data:
             p["prod"] += d["goodPro"] + d["dlnc"]
-            p["scrap"] += d["scrap"]
+            p["scrap"] += d["scrap"]+d["screen"]
             p["dlnc"] += d["dlnc"]
             p["reject"] += d["reject"]
+            p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
+
+            # emp_name = d.get("employee")
+            if d.get("employee") and d.get("employee").strip():
+                active_shifts.add((d["date"], d["shift"]))
+
             for s in d["stopTimes"]:
-                hr = float(s.get("hour") or 0)
-                st = s.get("stopTime", "")
+                hr = float(s.get("duration") or s.get("hour") or 0)
+                st = (s.get("stopTime") or s.get("stopCode") or "").strip()
+
                 if st in ["HOLIDAY", "WEEKEND OFF"]:
                     p["off_days"] += 1
                 elif st == "# ORDER CHANGE":
@@ -34,21 +40,21 @@ class ProductionStats:
                 else:
                     p["stop_hr"] += hr
 
-        num_shifts = len(set((d["date"], d["shift"]) for d in data))
-        total_hr = (num_shifts - p["off_days"]) * 12
+        num_shifts = len(active_shifts)
+        total_hr = num_shifts * 12
+        run_time = total_hr - p["stop_hr"]
+        total_output = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']
+        total_input = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']+p["visslab"]
 
-        # Các tỷ lệ
-        used_pct = (total_hr - p["stop_hr"]) / total_hr if total_hr > 0 else 0
-        yield_pct = p["prod"] / (p["prod"] + p["reject"] + p["scrap"]) if (p["prod"] + p["reject"] + p[
-            "scrap"]) > 0 else 0
-        net_hr = (p["prod"] + p["reject"] + p["scrap"] + p["visslab"]) / (total_hr - p["stop_hr"]) if (total_hr - p[
-            "stop_hr"]) > 0 else 0
+        used_pct = run_time / total_hr if total_hr > 0 else 0
+        yield_pct = p["prod"] / total_input if total_input > 0 else 0
+
+        net_hr = total_output/(total_hr - p["stop_hr"]) if (total_hr - p["stop_hr"]) > 0 else 0
 
         return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "net_hr": net_hr, "total_hr": total_hr,
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
 
     def _diff(self, curr, past):
-        """Tính % chênh lệch"""
         if past == 0: return "0%"
         return f"{((curr - past) / past) * 100:+.1f}%"
 
@@ -57,7 +63,6 @@ class ProductionStats:
         l = self._get_raw(self.lm, self.safety_lm)
         y = self._get_raw(self.ly, self.safety_ly)
 
-        # Trả về đúng thứ tự và cấu trúc bạn đã yêu cầu
         return {
             "PRODUCTION (KG)": {
                 "value": f"{c['prod']:,.0f}",
