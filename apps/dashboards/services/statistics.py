@@ -9,7 +9,7 @@ class ProductionStats:
 
     def _get_raw(self, data, safety_vals):
         p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
-             "mech_fail": 0, "mech_hr": 0, "off_days": 0}
+             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, }
 
         active_shifts = set()
         for d in data:
@@ -20,28 +20,42 @@ class ProductionStats:
             p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
 
-            # emp_name = d.get("employee")
             if d.get("employee") and d.get("employee").strip():
                 active_shifts.add((d["date"], d["shift"]))
 
-            for s in d["stopTimes"]:
-                hr = float(s.get("duration") or s.get("hour") or 0)
-                st = (s.get("stopTime") or s.get("stopCode") or "").strip()
+            stops = d.get("stopTimes", [])
+            STOP_CODE_MAP = {
+                "OFF_DAYS": ["HOLIDAY", "WEEKEND OFF"],
+                "MECH_TIME": ["MECHANICAL/ELECTRICAL FAILURE"],
+                "COUNTERS": ["# ORDER CHANGE", "# OF MECHANICAL FAILURE"]
+            }
 
-                if st in ["HOLIDAY", "WEEKEND OFF"]:
+            for s in stops:
+                hr = float(s.get("duration") or 0) + float(s.get("hour") or 0)
+                st = str(s.get("stopTime") or s.get("stopCode") or "").strip()
+                st_upper = st.upper()
+
+                if not st.startswith("#"):
+                    p["stop_hr"] += hr
+
+                if st_upper in STOP_CODE_MAP["OFF_DAYS"]:
                     p["off_days"] += 1
-                elif st == "# ORDER CHANGE":
-                    p["order_chg"] += 1
-                elif st == "# OF MECHANICAL FAILURE":
-                    p["mech_fail"] += 1
-                elif st == "MECHANICAL/ELECTRICAL FAILURE":
+                    p["off_hours"] += hr
+
+                if st == "MECHANICAL/ELECTRICAL FAILURE":
                     p["mech_hr"] += hr
-                    p["stop_hr"] += hr
-                else:
-                    p["stop_hr"] += hr
+
+                if st == "# ORDER CHANGE":
+                    p["order_chg"] += 1
+
+                if st == "# OF MECHANICAL FAILURE":
+                    p["mech_fail"] += 1
+
+        p['stop_hr'] = p['stop_hr'] - p["off_hours"]
 
         num_shifts = len(active_shifts)
         total_hr = num_shifts * 12
+        print("Total HR:", total_hr)
         run_time = total_hr - p["stop_hr"]
         total_output = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']
         total_input = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']+p["visslab"]
@@ -87,7 +101,7 @@ class ProductionStats:
                                        (y['scrap'] / y['prod'] if y['prod'] > 0 else 0))
             },
             "STOP TIME (HOUR)": {
-                "value": f"{c['stop_hr']:.2f}",
+                "value": f"{c["stop_hr"]:.2f}",
                 "lastMonth": self._diff(c['stop_hr'], l['stop_hr']),
                 "lastYear": self._diff(c['stop_hr'], y['stop_hr'])
             },

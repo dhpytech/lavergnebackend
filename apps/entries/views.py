@@ -88,6 +88,8 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
         KEY_HOURS = "MECHANICAL/ELECTRICAL FAILURE"
         KEY_TIMES = "# OF MECHANICAL FAILURE"
         ORDER_TIMES = "# ORDER CHANGE"
+        HOLIDAY_TIMES = "HOLIDAY"
+        OFF_TIMES = "WEEKEND OFF"
 
         # 3. Flatten dữ liệu
         for rec in filtered_qs:
@@ -118,8 +120,9 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
 
                 REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
                 if reason not in REASON_KEYS:
+                    if reason not in [OFF_TIMES, HOLIDAY_TIMES]:
+                        matrix["summary"]["stop_time_total"][day_idx] += duration_val
                     matrix["downtime"][reason][day_idx] += duration_val
-                    matrix["summary"]["stop_time_total"][day_idx] += duration_val
                 else:
                     matrix["numtime"][reason][day_idx] += duration_val
 
@@ -130,7 +133,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                     standard_time = len(matrix["operators"]["operator"][day_idx]) * 12
                     matrix["summary"]["stop_time_total"][day_idx] = standard_time
                     matrix["summary"]["shift_time"][day_idx] = standard_time
-
+                matrix["summary"]["shift_time"][day_idx] = len(matrix["operators"]["operator"][day_idx]) * 12
             for prob in getattr(rec, 'problem_data', []):
                 p_type = prob.get('problem') or 'Others'
                 prob_val = get_val(prob, 'hour', 'duration')
@@ -143,7 +146,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             p_total = matrix["summary"]["production_total"][i]
             w_total = matrix["summary"]["scrap_total"][i]
             s_total = matrix["summary"]["stop_time_total"][i]
-            sh_time = matrix["summary"]["shift_time"][i]
+            sh_time = len(matrix["operators"]["operator"][i]) * 12
 
             day_mech_hours = matrix["downtime"].get(KEY_HOURS, [0] * last_day)[i]
             day_mech_times = matrix["numtime"].get(KEY_TIMES, [0] * last_day)[i]

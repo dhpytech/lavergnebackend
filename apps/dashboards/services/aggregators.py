@@ -3,7 +3,7 @@ class ProductionAggregator:
     def normalize(qs):
         normalized = []
         for r in qs:
-            prod_list = r.production_data or []
+            prod_list = r.production_data if (r.production_data and len(r.production_data) > 0) else [{}]
             for item in prod_list:
                 normalized.append({
                     "id": r.id,
