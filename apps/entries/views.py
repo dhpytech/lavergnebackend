@@ -67,11 +67,13 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 "scrap_total": [0.0] * last_day,
                 "stop_time_total": [0.0] * last_day,
                 "shift_time": [float(default_shift_time)] * last_day,
+                "runtime": [0.0] * last_day,
                 "net_hour": [0.00] * last_day,
                 "percent_used": [0.00] * last_day,
                 "percent_yield": [0.00] * last_day,
                 "MTTR": [0.00] * last_day,
                 "MTBF": [0.00] * last_day,
+                # "num_emp": [0.00] * last_day,
             },
             "production": defaultdict(lambda: [0] * last_day),
             "reject": defaultdict(lambda: [0] * last_day),
@@ -82,7 +84,8 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             "downtime": defaultdict(lambda: [0] * last_day),
             "numtime": defaultdict(lambda: [0] * last_day),
             "problems": defaultdict(lambda: [0] * last_day),
-            "operators": defaultdict(lambda: [[] for _ in range(last_day)])
+            "operators": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "num_emp": defaultdict(lambda: [0] * last_day),
         }
 
         KEY_HOURS = "MECHANICAL/ELECTRICAL FAILURE"
@@ -100,7 +103,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             if emp_name:
                 if emp_name not in matrix["operators"]["operator"][day_idx]:
                     matrix["operators"]["operator"][day_idx].append(emp_name)
-
+                    # matrix["summary"]["num_emp"][day_idx] += 1
             # Production & Scrap
             for p in rec.production_data:
                 sku = p.get('productCode', 'Others')
@@ -132,8 +135,9 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 if shift_time != 0 and abs(stop_total - shift_time) < 1e-9:
                     standard_time = len(matrix["operators"]["operator"][day_idx]) * 12
                     matrix["summary"]["stop_time_total"][day_idx] = standard_time
-                    matrix["summary"]["shift_time"][day_idx] = standard_time
-                matrix["summary"]["shift_time"][day_idx] = len(matrix["operators"]["operator"][day_idx]) * 12
+
+            matrix["summary"]["shift_time"][day_idx] = len(matrix["operators"]["operator"][day_idx]) *12
+            matrix["summary"]["runtime"][day_idx] = matrix["summary"]["shift_time"][day_idx] - matrix["summary"]["stop_time_total"][day_idx]
             for prob in getattr(rec, 'problem_data', []):
                 p_type = prob.get('problem') or 'Others'
                 prob_val = get_val(prob, 'hour', 'duration')
