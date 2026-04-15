@@ -57,12 +57,12 @@ class ProductionStats:
         total_hr = num_shifts * 12
         print("Total HR:", total_hr)
         run_time = total_hr - p["stop_hr"]
-        total_output = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']
-        total_input = p["prod"]+p["scrap"]+p["dlnc"]+p["reject"]+p['screen']+p["visslab"]
+
+        total_output = p["prod"]+p["scrap"]+p["reject"]
+        total_input = p["prod"]+p["scrap"]+p["reject"]+p["visslab"]
 
         used_pct = run_time / total_hr if total_hr > 0 else 0
         yield_pct = p["prod"] / total_input if total_input > 0 else 0
-
         net_hr = total_output/(total_hr - p["stop_hr"]) if (total_hr - p["stop_hr"]) > 0 else 0
 
         return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "net_hr": net_hr, "total_hr": total_hr,

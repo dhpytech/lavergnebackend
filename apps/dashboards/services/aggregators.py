@@ -17,7 +17,7 @@ class ProductionAggregator:
                     "scrap": float(item.get("scrap") or 0),
                     "reject": float(item.get("reject") or 0),
                     "dlnc": float(item.get("dlnc") or 0),
-                    "visslab": float(item.get("visslab") or 0),
+                    "visslab": float(item.get("visslab") or 0) + float(item.get("visLab") or 0),
                     "outputSetting": float(item.get("outputSetting") or 0),
                     "stopTimes": r.stop_time_data or [],
                     "problems": r.problem_data or []
