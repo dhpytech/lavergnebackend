@@ -14,14 +14,14 @@ class ProductionStats:
         active_shifts = set()
         for d in data:
             p["prod"] += d["goodPro"] + d["dlnc"]
-            p["scrap"] += d["scrap"]+d["screen"]
+            p["scrap"] += d["scrap"] + d["screen"]
             p["dlnc"] += d["dlnc"]
             p["reject"] += d["reject"]
             p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
 
             if d.get("employee") and d.get("employee").strip():
-                active_shifts.add((d["date"], d["shift"]))
+                active_shifts.add(f'{d["date"]} - {d["shift"]}')
 
             stops = d.get("stopTimes", [])
             STOP_CODE_MAP = {
@@ -51,19 +51,18 @@ class ProductionStats:
                 if st == "# OF MECHANICAL FAILURE":
                     p["mech_fail"] += 1
 
-        p['stop_hr'] = p['stop_hr'] - p["off_hours"]
+        # p['stop_hr'] = p['stop_hr'] - p["off_hours"]
 
         num_shifts = len(active_shifts)
         total_hr = num_shifts * 12
-        print("Total HR:", total_hr)
-        run_time = total_hr - p["stop_hr"]
+        run_time = total_hr - p["stop_hr"]-p["off_hours"]
 
         total_output = p["prod"]+p["scrap"]+p["reject"]
         total_input = p["prod"]+p["scrap"]+p["reject"]+p["visslab"]
 
         used_pct = run_time / total_hr if total_hr > 0 else 0
         yield_pct = p["prod"] / total_input if total_input > 0 else 0
-        net_hr = total_output/(total_hr - p["stop_hr"]) if (total_hr - p["stop_hr"]) > 0 else 0
+        net_hr = total_output/run_time if run_time > 0 else 0
 
         return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "net_hr": net_hr, "total_hr": total_hr,
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
@@ -101,7 +100,7 @@ class ProductionStats:
                                        (y['scrap'] / y['prod'] if y['prod'] > 0 else 0))
             },
             "STOP TIME (HOUR)": {
-                "value": f"{c["stop_hr"]:.2f}",
+                "value": f"{c["stop_hr"]-c["off_hours"]:.2f}",
                 "lastMonth": self._diff(c['stop_hr'], l['stop_hr']),
                 "lastYear": self._diff(c['stop_hr'], y['stop_hr'])
             },

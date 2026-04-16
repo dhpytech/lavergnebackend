@@ -116,7 +116,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 matrix["dlnc"][sku][day_idx] += float(p.get('dlnc', 0))
 
                 matrix["summary"]["production_total"][day_idx] += float(p.get('goodPro', 0)) + float(p.get('dlnc', 0))
-                matrix["summary"]["scrap_total"][day_idx] += (float(p.get('scrap', 0)) + float(p.get('screen', 0)))
+                matrix["summary"]["scrap_total"][day_idx] += float(p.get('scrap', 0)) + float(p.get('screen', 0)) + float(p.get('screenChanger', 0))
                 matrix["summary"]["reject_total"][day_idx] += float(p.get('reject', 0))
                 matrix["summary"]["visslab_total"][day_idx] += float(p.get('visslab', 0))
 
