@@ -5,7 +5,10 @@ class ProductionAggregator:
 
         for r in qs:
             prod_list = r.production_data if (r.production_data and len(r.production_data) > 0) else [{}]
-            for item in prod_list:
+
+            for index, item in enumerate(prod_list):
+                is_first = (index == 0)
+
                 normalized.append({
                     "id": r.id,
                     "date": r.date,
@@ -20,7 +23,7 @@ class ProductionAggregator:
                     "dlnc": float(item.get("dlnc") or 0) + float(item.get("DLNC") or 0),
                     "visslab": float(item.get("visslab") or 0) + float(item.get("visLab") or 0),
                     "outputSetting": float(item.get("outputSetting") or 0),
-                    "stopTimes": r.stop_time_data or [],
-                    "problems": r.problem_data or []
+                    "stopTimes": r.stop_time_data if is_first else [],
+                    "problems": r.problem_data if is_first else []
                 })
         return normalized

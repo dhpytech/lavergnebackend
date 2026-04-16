@@ -9,7 +9,7 @@ class ProductionStats:
 
     def _get_raw(self, data, safety_vals):
         p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
-             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, }
+             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, }
 
         active_shifts = set()
         for d in data:
@@ -23,7 +23,7 @@ class ProductionStats:
             if d.get("employee") and d.get("employee").strip():
                 active_shifts.add(f'{d["date"]} - {d["shift"]}')
 
-            stops = d.get("stopTimes", [])
+            stops = d.get("stopTimes")
             STOP_CODE_MAP = {
                 "OFF_DAYS": ["HOLIDAY", "WEEKEND OFF"],
                 "MECH_TIME": ["MECHANICAL/ELECTRICAL FAILURE"],
@@ -31,8 +31,8 @@ class ProductionStats:
             }
 
             for s in stops:
-                hr = float(s.get("duration") or 0) + float(s.get("hour") or 0)
-                st = str(s.get("stopTime") or s.get("stopCode") or "").strip()
+                hr = float(s.get("duration") or 0) or float(s.get("hour") or 0)
+                st = str(s.get("stopTime") or s.get("stopCode")).strip()
                 st_upper = st.upper()
 
                 if not st.startswith("#"):
@@ -51,11 +51,11 @@ class ProductionStats:
                 if st == "# OF MECHANICAL FAILURE":
                     p["mech_fail"] += 1
 
-        # p['stop_hr'] = p['stop_hr'] - p["off_hours"]
+        p['stop_hr_no_weekend'] = p['stop_hr'] - p["off_hours"]
 
         num_shifts = len(active_shifts)
         total_hr = num_shifts * 12
-        run_time = total_hr - p["stop_hr"]-p["off_hours"]
+        run_time = total_hr - p['stop_hr_no_weekend']
 
         total_output = p["prod"]+p["scrap"]+p["reject"]
         total_input = p["prod"]+p["scrap"]+p["reject"]+p["visslab"]
@@ -68,7 +68,7 @@ class ProductionStats:
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
 
     def _diff(self, curr, past):
-        if past == 0: return "0%"
+        if past == 0 : return "0%"
         return f"{((curr - past) / past) * 100:+.1f}%"
 
     def calculate(self):
@@ -100,7 +100,7 @@ class ProductionStats:
                                        (y['scrap'] / y['prod'] if y['prod'] > 0 else 0))
             },
             "STOP TIME (HOUR)": {
-                "value": f"{c["stop_hr"]-c["off_hours"]:.2f}",
+                "value": f"{c["stop_hr"]:.2f} ({c["stop_hr_no_weekend"]:.2f} + {c["off_hours"]:.2f} )",
                 "lastMonth": self._diff(c['stop_hr'], l['stop_hr']),
                 "lastYear": self._diff(c['stop_hr'], y['stop_hr'])
             },

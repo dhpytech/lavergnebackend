@@ -121,13 +121,14 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 matrix["summary"]["visslab_total"][day_idx] += float(p.get('visslab', 0))
 
             for stop in getattr(rec, 'stop_time_data', []):
-                reason = stop.get('stopTime') or stop.get('stopCode') or 'Unknown'
+                reason = stop.get('stopTime') or stop.get('stopCode')
                 duration_val = get_val(stop, 'duration', 'hour')
 
                 REASON_KEYS = [KEY_TIMES, ORDER_TIMES]
                 if reason not in REASON_KEYS:
                     if reason not in [OFF_TIMES, HOLIDAY_TIMES]:
                         matrix["summary"]["stop_time_total"][day_idx] += duration_val
+
                     matrix["downtime"][reason][day_idx] += duration_val
                 else:
                     matrix["numtime"][reason][day_idx] += duration_val
