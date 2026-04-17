@@ -114,11 +114,10 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 matrix["screen"][sku][day_idx] += float(p.get('screen', 0)) + float(p.get('screenChanger', 0))
                 matrix["visslab"][sku][day_idx] += float(p.get('visslab', 0)) + float(p.get('visLab', 0))
                 matrix["dlnc"][sku][day_idx] += float(p.get('dlnc', 0))
-
                 matrix["summary"]["production_total"][day_idx] += float(p.get('goodPro', 0)) + float(p.get('dlnc', 0))
                 matrix["summary"]["scrap_total"][day_idx] += float(p.get('scrap', 0)) + float(p.get('screen', 0)) + float(p.get('screenChanger', 0))
                 matrix["summary"]["reject_total"][day_idx] += float(p.get('reject', 0))
-                matrix["summary"]["visslab_total"][day_idx] += float(p.get('visslab', 0))
+                matrix["summary"]["visslab_total"][day_idx] += float(p.get('visslab', 0)) + float(p.get('visLab', 0))
 
             for stop in getattr(rec, 'stop_time_data', []):
                 reason = stop.get('stopTime') or stop.get('stopCode')
@@ -128,7 +127,6 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 if reason not in REASON_KEYS:
                     if reason not in [OFF_TIMES, HOLIDAY_TIMES]:
                         matrix["summary"]["stop_time_total"][day_idx] += duration_val
-
                     matrix["downtime"][reason][day_idx] += duration_val
                 else:
                     matrix["numtime"][reason][day_idx] += duration_val
@@ -136,9 +134,9 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
                 shift_time = matrix["summary"]["shift_time"][day_idx]
                 stop_total = matrix["summary"]["stop_time_total"][day_idx]
 
-                if shift_time != 0 and abs(stop_total - shift_time) < 1e-9:
-                    standard_time = num_operator * 12
-                    matrix["summary"]["stop_time_total"][day_idx] = standard_time
+                # if shift_time != 0 and abs(stop_total - shift_time) < 1e-9:
+                #     # standard_time = num_operator * 12
+                #     # matrix["summary"]["stop_time_total"][day_idx] = standard_time
 
             matrix["summary"]["shift_time"][day_idx] = num_operator * 12
             matrix["summary"]["runtime"][day_idx] = matrix["summary"]["shift_time"][day_idx] - matrix["summary"]["stop_time_total"][day_idx]
@@ -189,7 +187,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
         t_run_time = t_shift - t_stop
 
         final_mttr = round(mech_hours_total / mech_times_total, 2) if mech_times_total > 0 else 0
-        final_mtbf = round(t_run_time / mech_times_total, 2) if mech_times_total > 0 else 0
+        final_mtbf = round(t_shift / mech_times_total, 2) if mech_times_total > 0 else round(t_shift, 2)
 
         grand_totals = {
             "production_total": t_prod,
@@ -198,7 +196,7 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
             "shift_time": t_shift,
             "net_hour": round((t_prod + t_waste + t_reject) / t_run_time, 2) if t_run_time > 0 else 0,
             "percent_used": round((t_run_time / t_shift) * 100, 2) if t_shift > 0 else 0,
-            "percent_yield": round((t_prod / t_input_total) * 100, 2) if t_input_total > 0 else 0,
+            "percent_yield": round((t_prod / t_input_total) * 100, 3) if t_input_total > 0 else 0,
             "MTTR": final_mttr,
             "MTBF": final_mtbf,
         }
