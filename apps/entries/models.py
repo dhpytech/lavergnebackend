@@ -40,7 +40,7 @@ class MetalInput(BaseProductionEntry):
 # 3. BAGGING: Có thêm nhân viên thứ 2 và số Lô (LOT)
 class BaggingInput(BaseProductionEntry):
     employee_2 = models.CharField(max_length=100, db_index=True, null=True)
-    lot_number = models.CharField(max_length=50, db_index=True)
+    lot_number = models.CharField(max_length=50, db_index=True, null=True)
 
     class Meta(BaseProductionEntry.Meta):
         verbose_name = "Bagging Production Entry"
