@@ -8,5 +8,5 @@ urlpatterns = [
     path("maris/", MarisDashboardAPI.as_view(), name="maris-dashboard"),
     path('maris/audit/', MarisAuditAPI.as_view(), name='maris-audit'),
     # path("dashboard/metal/", MetalDashboardAPI.as_view()),
-    path('bagging/', BaggingDashboardAPI.as_view() , name='bagging-dashboard'),
+    path('bagging/', BaggingDashboardAPI.as_view(), name='bagging-dashboard'),
 ]

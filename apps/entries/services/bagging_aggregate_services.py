@@ -1,116 +1,125 @@
+# apps/entries/services/bagging_aggregate_services.py
 from datetime import datetime, timedelta
-from django.db.models import Sum
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaggingAggregateService:
-    @staticmethod
-    def get_period_stats(queryset):
-        """Hàm helper để tính toán các con số tổng hợp từ một queryset"""
-        summary = {"input": 0, "output": 0, "rework": 0}
-        for entry in queryset:
-            for item in (entry.production_data or []):
-                iq = float(item.get('inputQty', 0))
-                oq = float(item.get('outputQty', 0))
-                if iq == 0:
-                    summary["rework"] += oq
-                else:
-                    summary["input"] += iq
-                summary["output"] += oq
+    def _diff(self, curr, past):
+        if not past or past == 0: return "+0.0%"
+        diff = ((curr - past) / past) * 100
+        return f"{diff:+.1f}%"
 
-        # Tính Yield thực tế
-        actual_output = summary["output"] - summary["rework"]
-        yield_rate = (actual_output / summary["input"] * 100) if summary["input"] > 0 else 0
+    def get_raw_metrics(self, queryset):
+        res = {"in": 0, "ship": 0, "rw": 0, "time": 0}
+        try:
+            for entry in queryset:
+                # Giả định mỗi entry tính là 8h nếu không có data cụ thể
+                res["time"] += 12
 
-        return {
-            "input": summary["input"],
-            "output": summary["output"],
-            "rework": summary["rework"],
-            "yield": yield_rate
-        }
+                prod_data = entry.production_data or []
+                if not isinstance(prod_data, list): continue
+
+                for item in prod_data:
+                    # Dùng float(item.get(..., 0) or 0) để tránh null
+                    iq = float(item.get('inputQty') or 0)
+                    oq = float(item.get('outputQty') or 0)
+
+                    if iq == 0:
+                        res["rw"] += oq
+                    else:
+                        res["in"] += iq
+                    res["ship"] += oq
+        except Exception as e:
+            logger.error(f"Error in get_raw_metrics: {e}")
+
+        res["rate"] = (res["ship"] / res["in"] * 100) if res["in"] > 0 else 0
+        return res
 
     @classmethod
     def aggregate_production_data(cls, queryset, filters):
-        # 1. Tính toán kỳ hiện tại (Current Period)
-        current_stats = cls.get_period_stats(queryset)
+        inst = cls()
+        curr = inst.get_raw_metrics(queryset)
 
-        # 2. Lấy dữ liệu đối soát (Last Month & Last Year)
-        # Giả sử filters['start_date'] là string 'YYYY-MM-DD'
-        start_dt = datetime.strptime(filters['start_date'], '%Y-%m-%d')
-        end_dt = datetime.strptime(filters['end_date'], '%Y-%m-%d')
-        delta = end_dt - start_dt
+        # Xử lý ngày tháng an toàn
+        try:
+            s_dt = datetime.strptime(filters.get('start', '2026-01-01'), '%Y-%m-%d')
+            e_dt = datetime.strptime(filters.get('end', '2026-01-01'), '%Y-%m-%d')
+        except:
+            s_dt = e_dt = datetime.now()
 
-        # Last Month (Cùng khoảng thời gian nhưng lùi 1 tháng)
-        lm_start = (start_dt - timedelta(days=30))
-        lm_end = (end_dt - timedelta(days=30))
-
-        # Last Year (Cùng khoảng thời gian nhưng lùi 1 năm)
-        ly_start = start_dt.replace(year=start_dt.year - 1)
-        ly_end = end_dt.replace(year=end_dt.year - 1)
-
-        # Truy vấn dữ liệu quá khứ (Sử dụng Selector để lấy queryset tương ứng)
-        # Lưu ý: Cần import selector ở đầu file hoặc gọi trực tiếp Model
+        # Query dữ liệu so sánh
         from ..models import BaggingInput
-        lm_qs = BaggingInput.objects.filter(date__range=[lm_start, lm_end])
-        ly_qs = BaggingInput.objects.filter(date__range=[ly_start, ly_end])
+        lm_qs = BaggingInput.objects.filter(date__range=[s_dt - timedelta(days=30), e_dt - timedelta(days=30)])
+        ly_qs = BaggingInput.objects.filter(
+            date__range=[s_dt.replace(year=s_dt.year - 1), e_dt.replace(year=e_dt.year - 1)])
 
-        lm_stats = cls.get_period_stats(lm_qs)
-        ly_stats = cls.get_period_stats(ly_qs)
+        lm = inst.get_raw_metrics(lm_qs)
+        ly = inst.get_raw_metrics(ly_qs)
 
-        # 3. Chuẩn bị dữ liệu cho Charts (Dựa trên queryset hiện tại)
+        # Gom dữ liệu Chart & Table
         daily_series = {}
         product_mix = {}
-        lot_data = {}
+        lot_summary = {}
 
         for entry in queryset:
-            date_key = entry.date.strftime("%d/%m")
-            lot_no = entry.lot_number or "N/A"
-            if lot_no not in lot_data:
-                lot_data[lot_no] = {"input": 0, "output": 0, "rework": 0, "reject": 0}
-            if date_key not in daily_series:
-                daily_series[date_key] = 0
+            d_key = entry.date.strftime("%d/%m")
+            l_no = entry.lot_number or "N/A"
+
+            if l_no not in lot_summary:
+                lot_summary[l_no] = {"lot": l_no, "in": 0, "out": 0, "rw": 0, "rj": 0, }
 
             for item in (entry.production_data or []):
-                iq = float(item.get('inputQty', 0))
-                oq = float(item.get('outputQty', 0))
+                iq = float(item.get('inputQty') or 0)
+                oq = float(item.get('outputQty') or 0)
                 p_code = item.get('productCode', 'Other')
 
-                daily_series[date_key] += oq
+                daily_series[d_key] = daily_series.get(d_key, 0) + oq
                 product_mix[p_code] = product_mix.get(p_code, 0) + oq
 
-                if iq != 0:
-                    lot_data[lot_no]["input"] += iq
-                    lot_data[lot_no]["reject"] += (iq - oq)
+                if iq == 0:
+                    lot_summary[l_no]["rw"] += oq
                 else:
-                    lot_data[lot_no]["rework"] += oq
-                lot_data[lot_no]["output"] += oq
+                    lot_summary[l_no]["in"] += iq
+                lot_summary[l_no]["out"] += oq
+            lot_summary[l_no]["rj"] = lot_summary[l_no]["in"] - lot_summary[l_no]["out"]
 
-        # 4. Trả về cấu trúc khớp 100% với StatCard của Maris
+        lot_chart_final = []
+        for l_no, stats in lot_summary.items():
+            lot_chart_final.append({
+                "name": l_no,
+                "input": stats["in"],
+                "shipping": stats["out"],
+                "reject": stats["rj"]
+            })
         return {
             "kpis": {
-                "Total Input (KG)": {
-                    "value": f"{current_stats['input']:,.0f}",
-                    "lastMonth": lm_stats['input'],
-                    "lastYear": ly_stats['input']
+                "TOTAL IN": {
+                    "value": f"{curr['in']:,.0f}",
+                    "lastMonth": inst._diff(curr['in'], lm['in']),
+                    "lastYear": inst._diff(curr['in'], ly['in'])
                 },
-                "Total Output (KG)": {
-                    "value": f"{current_stats['output']:,.0f}",
-                    "lastMonth": lm_stats['output'],
-                    "lastYear": ly_stats['output']
+                "SHIPPING": {
+                    "value": f"{curr['ship']:,.0f}",
+                    "lastMonth": inst._diff(curr['ship'], lm['ship']),
+                    "lastYear": inst._diff(curr['ship'], ly['ship'])
                 },
-                "Rework Qty (KG)": {
-                    "value": f"{current_stats['rework']:,.0f}",
-                    "lastMonth": lm_stats['rework'],
-                    "lastYear": ly_stats['rework']
+                "RATE": {
+                    "value": f"{curr['rate']:.1f}%",
+                    "lastMonth": inst._diff(curr['rate'], lm['rate']),
+                    "lastYear": inst._diff(curr['rate'], ly['rate'])
                 },
-                "Yield Rate (%)": {
-                    "value": f"{current_stats['yield']:.2f}%",
-                    "lastMonth": lm_stats['yield'],
-                    "lastYear": ly_stats['yield']
+                "WORKING TIME": {
+                    "value": f"{curr['time']:,.0f}h",
+                    "lastMonth": inst._diff(curr['time'], lm['time']),
+                    "lastYear": inst._diff(curr['time'], ly['time'])
                 }
             },
             "charts": {
-                "column_chart": [{"name": k, "volume": v} for k, v in product_mix.items()],
-                "pie_chart": [{"name": k, "value": v} for k, v in product_mix.items()]
+                "bar_chart": [{"name": k, "volume": v} for k, v in product_mix.items()],
+                "pie_chart": [{"name": k, "value": v} for k, v in product_mix.items()],
+                "lot_chart": lot_chart_final
             },
-            "lots": [{"lot": k, **v} for k, v in lot_data.items()]
+            "lots": sorted(lot_summary.values(), key=lambda x: x['lot'], reverse=True)
         }
