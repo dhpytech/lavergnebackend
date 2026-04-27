@@ -44,3 +44,29 @@ class BaggingInput(BaseProductionEntry):
 
     class Meta(BaseProductionEntry.Meta):
         verbose_name = "Bagging Production Entry"
+
+
+class MarisDailySummary(models.Model):
+    date = models.DateField(db_index=True)
+    employee = models.CharField(max_length=100, db_index=True)
+
+    # Các thông số thô (Dữ liệu này dùng để Sum lại khi xem theo tháng)
+    prod = models.FloatField(default=0)  # goodPro + dlnc
+    scrap = models.FloatField(default=0)  # scrap + screen
+    dlnc = models.FloatField(default=0)
+    reject = models.FloatField(default=0)
+    screen = models.FloatField(default=0)
+    visslab = models.FloatField(default=0)
+
+    # Thời gian và lỗi (Dữ liệu từ stopTimes)
+    stop_hr = models.FloatField(default=0)
+    off_hours = models.FloatField(default=0)
+    mech_hr = models.FloatField(default=0)
+    order_chg = models.IntegerField(default=0)
+    mech_fail = models.IntegerField(default=0)
+
+    # Số ca làm việc (Phục vụ tính total_hr = n * 12)
+    num_shifts = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('date', 'employee')

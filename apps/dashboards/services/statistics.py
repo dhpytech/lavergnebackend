@@ -65,6 +65,7 @@ class ProductionStats:
         net_hr = total_output/run_time if run_time > 0 else 0
 
         return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "net_hr": net_hr, "total_hr": total_hr,
+                "num_shifts": num_shifts,
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
 
     def _diff(self, curr, past):
