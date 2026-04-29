@@ -20,11 +20,6 @@ class MarisMonthlyAnalyticsView(APIView):
         if start_date and end_date:
             qs = qs.filter(date__range=[start_date, end_date])
 
-
-
-
-
-
         stats = (
             qs.annotate(month=TruncMonth('date'))
             .values('month', 'employee')
@@ -49,19 +44,16 @@ class MarisMonthlyAnalyticsView(APIView):
                     "DETAILS": {}
                 }
 
-            # Cộng dồn vào mục SUMMARY của tháng (Trend tổng cả xưởng)
             result[month_str]["SUMMARY"]["total_prod"] += item['m_prod']
             result[month_str]["SUMMARY"]["total_scrap"] += item['m_scrap']
             result[month_str]["SUMMARY"]["total_shifts"] += item['m_shifts']
 
-            # Gán vào mục DETAILS (Dữ liệu riêng của từng người để lọc)
-            result[month_str]["DETAILS"][emp_name] = {
+            result[month_str]["DETAILS"][emp_name] = \
+                {
                 "prod": item['m_prod'],
                 "scrap": item['m_scrap'],
                 "shifts": item['m_shifts'],
-                "efficiency": round((item['m_prod'] / (item['m_prod'] + item['m_scrap']) * 100), 2) if (item['m_prod'] +
-                                                                                                        item[
-                                                                                                            'm_scrap']) > 0 else 0
-            }
-
+                "efficiency": round((item['m_prod'] / (item['m_prod'] + item['m_scrap']) * 100), 2) if (item['m_prod'] +item['m_scrap']) > 0 else 0
+                }
         return Response(result)
+
