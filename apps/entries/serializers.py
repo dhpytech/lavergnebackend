@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MarisInput, MetalInput, BaggingInput
+from .models import MarisInput, MetalInput, BaggingInput, MarisDailySummary
 
 
 class BaseProductionSerializer(serializers.ModelSerializer):
@@ -31,6 +31,12 @@ class MarisInputSerializer(BaseProductionSerializer):
         fields = BaseProductionSerializer.Meta.fields + [
             'stop_time_data', 'problem_data', 'comment'
         ]
+
+
+class MarisSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarisDailySummary
+        fields = '__all__'
 
 
 class MetalInputSerializer(BaseProductionSerializer):

@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import MarisInput, MetalInput, BaggingInput
-from .serializers import MarisInputSerializer, MetalInputSerializer, BaggingInputSerializer
+from .models import MarisInput, MetalInput, BaggingInput, MarisDailySummary
+from .serializers import MarisInputSerializer, MetalInputSerializer, BaggingInputSerializer, MarisSummarySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import MarisInputFilter
 import calendar
@@ -15,6 +15,11 @@ class MarisInputViewSet(viewsets.ModelViewSet):
     serializer_class = MarisInputSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = MarisInputFilter
+
+
+class MarisDailyViewSet(viewsets.ModelViewSet):
+    queryset = MarisDailySummary.objects.all()
+    serializer_class = MarisSummarySerializer
 
 
 # 2. Metal ViewSet
