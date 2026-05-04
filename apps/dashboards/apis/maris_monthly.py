@@ -5,6 +5,12 @@ from django.db.models.functions import TruncMonth
 from entries.models import MarisDailySummary
 
 
+class MarisActiveEmployeesView(APIView):
+    def get(self, request):
+        employees = MarisDailySummary.objects.values_list('employee', flat=True).distinct().order_by('employee')
+        return Response(list(employees))
+
+
 class MarisMonthlyAnalyticsView(APIView):
     def get(self, request):
         selected_employees = request.query_params.get('employees')
@@ -26,6 +32,17 @@ class MarisMonthlyAnalyticsView(APIView):
             .annotate(
                 m_prod=Sum('prod'),
                 m_scrap=Sum('scrap'),
+                m_dlnc=Sum('dlnc'),
+                m_reject=Sum('reject'),
+                m_screen=Sum('screen'),
+                m_visslab=Sum('visslab'),
+
+                m_stop_hr=Sum('stop_hr'),
+                m_off_hours=Sum('off_hours'),
+                m_mech_hr=Sum('mech_hr'),
+                m_order_chg=Sum('order_chg'),
+                m_mech_fail=Sum('mech_fail'),
+
                 m_shifts=Sum('num_shifts')
             )
             .order_by('month')
@@ -40,20 +57,53 @@ class MarisMonthlyAnalyticsView(APIView):
 
             if month_str not in result:
                 result[month_str] = {
-                    "SUMMARY": {"total_prod": 0, "total_scrap": 0, "total_shifts": 0},
+                    "SUMMARY": {
+                        "total_prod": 0,
+                        "total_scrap": 0,
+                        "total_dlnc": 0,
+                        "total_reject": 0,
+                        "total_screen": 0,
+                        "total_visslab": 0,
+                        "total_shifts": 0,
+
+                        "total_stop_hr": 0,
+                        "total_off_hours": 0,
+                        "total_mech_hr": 0,
+                        "total_order_chg": 0,
+                        "total_mech_fail": 0,
+                    },
                     "DETAILS": {}
                 }
 
             result[month_str]["SUMMARY"]["total_prod"] += item['m_prod']
             result[month_str]["SUMMARY"]["total_scrap"] += item['m_scrap']
+            result[month_str]["SUMMARY"]["total_dlnc"] += item['m_dlnc']
+            result[month_str]["SUMMARY"]["total_reject"] += item['m_reject']
+            result[month_str]["SUMMARY"]["total_screen"] += item['m_screen']
+            result[month_str]["SUMMARY"]["total_visslab"] += item['m_visslab']
             result[month_str]["SUMMARY"]["total_shifts"] += item['m_shifts']
+
+            result[month_str]["SUMMARY"]["total_stop_hr"] += item['m_stop_hr']
+            result[month_str]["SUMMARY"]["total_off_hours"] += item['m_off_hours']
+            result[month_str]["SUMMARY"]["total_mech_hr"] += item['m_mech_hr']
+            result[month_str]["SUMMARY"]["total_order_chg"] += item['m_order_chg']
+            result[month_str]["SUMMARY"]["total_mech_fail"] += item['m_mech_fail']
 
             result[month_str]["DETAILS"][emp_name] = \
                 {
                 "prod": item['m_prod'],
                 "scrap": item['m_scrap'],
+                "dlnc": item['m_dlnc'],
+                "reject": item['m_reject'],
+                "screen": item['m_screen'],
+                "visslab": item['m_visslab'],
+
+                "stop_hours": item['m_stop_hr'],
+                "off_hours": item['m_off_hours'],
+                "mech_hr": item['m_mech_hr'],
+                "order_chg": item['m_order_chg'],
+                "mech_fail": item['m_mech_fail'],
+
                 "shifts": item['m_shifts'],
-                "efficiency": round((item['m_prod'] / (item['m_prod'] + item['m_scrap']) * 100), 2) if (item['m_prod'] +item['m_scrap']) > 0 else 0
                 }
         return Response(result)
-

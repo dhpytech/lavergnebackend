@@ -3,7 +3,7 @@ from .apis.maris_api import MarisDashboardAPI
 from .apis.audit_api import MarisAuditAPI
 from .apis.bagging_api import BaggingDashboardAPI
 from .apis.metal_api import MetalDashboardAPI
-from .apis.maris_monthly import MarisMonthlyAnalyticsView
+from .apis.maris_monthly import MarisMonthlyAnalyticsView, MarisActiveEmployeesView
 
 
 urlpatterns = [
@@ -12,4 +12,6 @@ urlpatterns = [
     path('bagging/', BaggingDashboardAPI.as_view(), name='bagging-dashboard'),
     path('metal/', MetalDashboardAPI.as_view(), name='metal-dashboard'),
     path('monthly-maris', MarisMonthlyAnalyticsView.as_view(), name='maris-monthly-analytics'),
+    path('active-employees', MarisActiveEmployeesView.as_view(), name='active-employees'),
+
 ]
