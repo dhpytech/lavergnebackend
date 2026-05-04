@@ -7,7 +7,14 @@ from entries.models import MarisDailySummary
 
 class MarisActiveEmployeesView(APIView):
     def get(self, request):
-        employees = MarisDailySummary.objects.values_list('employee', flat=True).distinct().order_by('employee')
+        start_date = request.query_params.get('start')
+        end_date = request.query_params.get('end')
+
+        qs = MarisDailySummary.objects.all()
+        if start_date and end_date:
+            qs = qs.filter(date__range=[start_date, end_date])
+
+        employees = qs.values_list('employee', flat=True).distinct().order_by('employee')
         return Response(list(employees))
 
 
