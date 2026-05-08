@@ -42,7 +42,8 @@ def auto_calculate_maris_daily(sender, instance, **kwargs):
                 'mech_hr': c['mech_hr'],
                 'order_chg': c['order_chg'],
                 'mech_fail': c['mech_fail'],
-                'num_shifts': len(set([f"{d['date']}-{d['shift']}" for d in normalized]))
+                'num_shifts': len(set([f"{d['date']}-{d['shift']}" for d in normalized])),
+                'output_setting': c['output_setting'],
             }
         )
     else:

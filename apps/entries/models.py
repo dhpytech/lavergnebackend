@@ -64,8 +64,7 @@ class MarisDailySummary(models.Model):
     order_chg = models.IntegerField(default=0)
     mech_fail = models.IntegerField(default=0)
 
-    # Số ca làm việc (Phục vụ tính total_hr = n * 12)
     num_shifts = models.IntegerField(default=0)
-
+    output_setting = models.FloatField(default=0)
     class Meta:
         unique_together = ('date', 'employee')

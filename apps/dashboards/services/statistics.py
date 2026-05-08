@@ -9,7 +9,7 @@ class ProductionStats:
 
     def _get_raw(self, data, safety_vals):
         p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
-             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, }
+             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, 'output_setting': 0}
 
         active_shifts = set()
         for d in data:
@@ -19,6 +19,7 @@ class ProductionStats:
             p["reject"] += d["reject"]
             p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
+            p["output_setting"] += d["outputSetting"]
 
             if d.get("employee") and d.get("employee").strip():
                 active_shifts.add(f'{d["date"]} - {d["shift"]}')
