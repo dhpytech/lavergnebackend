@@ -83,15 +83,15 @@ class ProductionStats:
                 "lastMonth": self._diff(c['prod'], l['prod']),
                 "lastYear": self._diff(c['prod'], y['prod'])
             },
-            "SCRAP (KG)": {
-                "value": f"{c['scrap']:,.1f}",
-                "lastMonth": self._diff(c['scrap'], l['scrap']),
-                "lastYear": self._diff(c['scrap'], y['scrap'])
-            },
             "DL/NC (KG)": {
                 "value": f"{c['dlnc']:,.0f}",
                 "lastMonth": self._diff(c['dlnc'], l['dlnc']),
                 "lastYear": self._diff(c['dlnc'], y['dlnc'])
+            },
+            "SCRAP (KG)": {
+                "value": f"{c['scrap']:,.1f}",
+                "lastMonth": self._diff(c['scrap'], l['scrap']),
+                "lastYear": self._diff(c['scrap'], y['scrap'])
             },
             "SCRAP/PRODUCTION (%)": {
                 "value": f"{(c['scrap'] / c['prod'] * 100 if c['prod'] > 0 else 0):.2f}%",
@@ -99,6 +99,11 @@ class ProductionStats:
                                         (l['scrap'] / l['prod'] if l['prod'] > 0 else 0)),
                 "lastYear": self._diff((c['scrap'] / c['prod'] if c['prod'] > 0 else 0),
                                        (y['scrap'] / y['prod'] if y['prod'] > 0 else 0))
+            },
+            "VISSLAB (KG)": {
+                "value": f"{c['visslab']:,.1f}",
+                "lastMonth": self._diff(c['visslab'], l['visslab']),
+                "lastYear": self._diff(c['visslab'], y['visslab'])
             },
             "STOP TIME (HOUR)": {
                 "value": f"{c["stop_hr"]:.2f} ({c["stop_hr_no_weekend"]:.2f} + {c["off_hours"]:.2f} )",
