@@ -131,6 +131,7 @@ class Metric:
     net_hour = "net_hour"
     used = "used"
     percent_yield = "percent_yield"
+    oee = "oee"
     mttr = "mttr"
 
 
@@ -237,6 +238,12 @@ METRIC_CONFIGS = [
         "chartStatus": "Active"
     },
     {
+        "id": "oee",
+        "label": "OEE (%)",
+        "path": Metric.oee,
+        "chartStatus": "Active"
+    },
+    {
         "id": "mttr",
         "label": "MTTR (HOUR)",
         "path": Metric.mttr,
@@ -278,7 +285,7 @@ class MarisMonthlyAnalyticsView(APIView):
             .values('month', 'employee')
             .annotate(
                 m_prod=Sum('prod'), m_scrap=Sum('scrap'), m_dlnc=Sum('dlnc'), m_reject=Sum('reject'),
-                m_screen=Sum('screen'), m_visslab=Sum('visslab'),
+                m_screen=Sum('screen'), m_visslab=Sum('visslab'), m_output_setting=Sum('output_setting'),
                 m_stop_hr=Sum('stop_hr'), m_off_hours=Sum('off_hours'), m_mech_hr=Sum('mech_hr'),
                 m_order_chg=Sum('order_chg'), m_mech_fail=Sum('mech_fail'), m_shifts=Sum('num_shifts')
             )
@@ -346,9 +353,11 @@ class MarisMonthlyAnalyticsView(APIView):
             e_input = item.get('m_prod', 0) + item.get('m_scrap', 0) + item.get('m_reject', 0) + item.get('m_visslab', 0)
 
             e_net_hour = e_output / e_runtime if e_runtime > 0 else 0
-            e_used = e_runtime/ sh*12 if sh > 0 else 0
+            e_used = e_runtime / (sh*12) if sh > 0 else 0
             e_percent_yield = item.get('m_prod', 0) / e_input if e_input > 0 else 0
             e_mttr = item.get('m_mech_hr', 0) / item.get('m_mech_fail', 0) if item.get('m_mech_hr', 0) > 0 else 0
+            e_rate = e_output/item.get("m_output_setting") if item.get("m_output_setting") > 0 else 0
+            e_oee = e_used * e_percent_yield * e_rate
 
             result[month_str]["DETAILS"][emp_name] = {
                 "prod": item.get('m_prod', 0),
@@ -358,7 +367,6 @@ class MarisMonthlyAnalyticsView(APIView):
                 "screen": item.get('m_screen', 0),
                 "visslab": item.get('m_visslab', 0),
 
-                # Lưu ý: Sửa thành "stop_hr" cho khớp với Config ở Frontend
                 "stop_hr": item.get('m_stop_hr', 0),
                 "off_hours": item.get('m_off_hours', 0),
                 "mech_hr": item.get('m_mech_hr', 0),
@@ -370,6 +378,7 @@ class MarisMonthlyAnalyticsView(APIView):
                 "net_hour": e_net_hour,
                 "used": e_used,
                 "percent_yield": e_percent_yield,
+                "oee": e_rate,
                 "mttr": e_mttr,
             }
         return Response({
