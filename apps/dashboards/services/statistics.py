@@ -9,7 +9,8 @@ class ProductionStats:
 
     def _get_raw(self, data, safety_vals):
         p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
-             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, 'output_setting': 0}
+             "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, 'output_setting': 0,
+             'rate': 0}
 
         active_shifts = set()
         for d in data:
@@ -64,8 +65,9 @@ class ProductionStats:
         used_pct = run_time / total_hr if total_hr > 0 else 0
         yield_pct = p["prod"] / total_input if total_input > 0 else 0
         net_hr = total_output/run_time if run_time > 0 else 0
+        rate = total_output/p['output_setting'] if p['output_setting'] > 0 else 0
 
-        return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "net_hr": net_hr, "total_hr": total_hr,
+        return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "rate": rate, "net_hr": net_hr, "total_hr": total_hr,
                 "num_shifts": num_shifts,
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
 
@@ -137,9 +139,9 @@ class ProductionStats:
                 "lastYear": self._diff(c['yield_pct'], y['yield_pct'])
             },
             "OEE (%)": {
-                "value": f"{(c['used_pct'] * c['yield_pct']):.2%}",
-                "lastMonth": self._diff(c['used_pct'] * c['yield_pct'], l['used_pct'] * l['yield_pct']),
-                "lastYear": self._diff(c['used_pct'] * c['yield_pct'], y['used_pct'] * y['yield_pct'])
+                "value": f"{(c['used_pct'] * c['yield_pct'] * c['rate']):.2%}",
+                "lastMonth": self._diff(c['used_pct']*c['yield_pct']*c['rate'], l['used_pct']*l['yield_pct']*l['rate']),
+                "lastYear": self._diff(c['used_pct']*c['yield_pct']*c['rate'], y['used_pct']*y['yield_pct']*y['rate'])
             },
             "MTTR (HOUR)": {
                 "value": f"{(c['mech_hr'] / c['mech_fail'] if c['mech_fail'] > 0 else 0):.2f}",
