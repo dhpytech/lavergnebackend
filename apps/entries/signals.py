@@ -44,8 +44,8 @@ def auto_calculate_maris_daily(sender, instance, **kwargs):
                 'mech_fail': c['mech_fail'],
                 'num_shifts': len(set([f"{d['date']}-{d['shift']}" for d in normalized])),
                 'output_setting': c['output_setting'],
+                'perfect_time': c['perfect_time'],
             }
         )
     else:
-        # Nếu xóa hết dữ liệu thô thì xóa luôn dòng tổng hợp
         MarisDailySummary.objects.filter(date=date, employee=employee).delete()

@@ -10,7 +10,7 @@ class ProductionStats:
     def _get_raw(self, data, safety_vals):
         p = {"prod": 0, "scrap": 0, "dlnc": 0, "reject": 0, "screen": 0, "visslab": 0, "stop_hr": 0, "order_chg": 0,
              "mech_fail": 0, "mech_hr": 0, "off_days": 0, "off_hours": 0, "stop_hr_no_weekend": 0, 'output_setting': 0,
-             'rate': 0}
+             "perfect_time": 0, }
 
         active_shifts = set()
         for d in data:
@@ -21,6 +21,8 @@ class ProductionStats:
             p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
             p["output_setting"] += d["outputSetting"]
+            each_perfect_time = (d["goodPro"]+d["dlnc"]+d["scrap"]+d["screen"]+d["reject"])/d["outputSetting"] if d["outputSetting"] else 0
+            p["perfect_time"] += each_perfect_time
 
             if d.get("employee") and d.get("employee").strip():
                 active_shifts.add(f'{d["date"]} - {d["shift"]}')
@@ -61,14 +63,16 @@ class ProductionStats:
 
         total_output = p["prod"]+p["scrap"]+p["reject"]
         total_input = p["prod"]+p["scrap"]+p["reject"]+p["visslab"]
+        total_setting = p['output_setting']
 
         used_pct = run_time / total_hr if total_hr > 0 else 0
         yield_pct = p["prod"] / total_input if total_input > 0 else 0
         net_hr = total_output/run_time if run_time > 0 else 0
-        rate = total_output/p['output_setting'] if p['output_setting'] > 0 else 0
+
+        rate = p["perfect_time"]/run_time if run_time > 0 else 0
 
         return {**p, "used_pct": used_pct, "yield_pct": yield_pct, "rate": rate, "net_hr": net_hr, "total_hr": total_hr,
-                "num_shifts": num_shifts,
+                "num_shifts": num_shifts, "total_setting": total_setting,
                 "incident": safety_vals['incident'], "accident": safety_vals['accident']}
 
     def _diff(self, curr, past):

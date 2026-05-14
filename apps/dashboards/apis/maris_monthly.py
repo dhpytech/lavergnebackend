@@ -96,6 +96,14 @@ SUMMARY_CONFIGS = [
                       "backgroundColor": "transparent", "fill": False}]
     },
     {
+        "id": "PERFECT_TIME",
+        "title": "PERFECT_TIME",
+        "menuTitle": "PERFECT_TIME",
+        "chartStatus": "Active",
+        "datasets": [{"label": "%", "dataPath": "SUMMARY.total_perfect_time", "borderColor": "#10b981",
+                      "backgroundColor": "transparent", "fill": False}]
+    },
+    {
         "id": "MTTR",
         "title": "MTTR",
         "menuTitle": "MTTR",
@@ -133,6 +141,7 @@ class Metric:
     percent_yield = "percent_yield"
     oee = "oee"
     mttr = "mttr"
+    perfect_time = "perfect_time"
 
 
 METRIC_CONFIGS = [
@@ -244,6 +253,12 @@ METRIC_CONFIGS = [
         "chartStatus": "Active"
     },
     {
+        "id": "perfect_time",
+        "label": "PERFECT TIME (HOUR)",
+        "path": Metric.perfect_time,
+        "chartStatus": "Active"
+    },
+    {
         "id": "mttr",
         "label": "MTTR (HOUR)",
         "path": Metric.mttr,
@@ -287,7 +302,8 @@ class MarisMonthlyAnalyticsView(APIView):
                 m_prod=Sum('prod'), m_scrap=Sum('scrap'), m_dlnc=Sum('dlnc'), m_reject=Sum('reject'),
                 m_screen=Sum('screen'), m_visslab=Sum('visslab'), m_output_setting=Sum('output_setting'),
                 m_stop_hr=Sum('stop_hr'), m_off_hours=Sum('off_hours'), m_mech_hr=Sum('mech_hr'),
-                m_order_chg=Sum('order_chg'), m_mech_fail=Sum('mech_fail'), m_shifts=Sum('num_shifts')
+                m_order_chg=Sum('order_chg'), m_mech_fail=Sum('mech_fail'), m_shifts=Sum('num_shifts'),
+                m_perfect_time=Sum('perfect_time')
             )
             .order_by('month')
         )
@@ -302,8 +318,8 @@ class MarisMonthlyAnalyticsView(APIView):
                     "SUMMARY": {
                         "total_prod": 0, "total_scrap": 0, "total_dlnc": 0, "total_reject": 0, "total_screen": 0,
                         "total_visslab": 0, "total_shifts": 0, "total_stop_hr": 0, "total_off_hours": 0,
-                        "total_mech_hr": 0, "total_order_chg": 0, "total_mech_fail": 0,
-                        "net_per_hour": 0, "used": 0, "yield": 0, "oee": 0, "mttr": 0, "mtbf": 0,
+                        "total_mech_hr": 0, "total_order_chg": 0, "total_mech_fail": 0, "total_output_setting": 0,
+                        "net_per_hour": 0, "used": 0, "yield": 0, "oee": 0, "mttr": 0, "mtbf": 0, "total_perfect_time": 0
                     },
                     "DETAILS": {}
                 }
@@ -321,6 +337,8 @@ class MarisMonthlyAnalyticsView(APIView):
             result[month_str]["SUMMARY"]["total_mech_hr"] += item['m_mech_hr']
             result[month_str]["SUMMARY"]["total_order_chg"] += item['m_order_chg']
             result[month_str]["SUMMARY"]["total_mech_fail"] += item['m_mech_fail']
+            result[month_str]["SUMMARY"]["total_output_setting"] += item['m_output_setting']
+            result[month_str]["SUMMARY"]["total_perfect_time"] += item['m_perfect_time']
 
             t_shift_time = result[month_str]["SUMMARY"]["total_shifts"]*12
             t_stop_time_no_weekend = result[month_str]["SUMMARY"]["total_stop_hr"] - result[month_str]["SUMMARY"]["total_off_hours"]
@@ -331,11 +349,13 @@ class MarisMonthlyAnalyticsView(APIView):
                        result[month_str]["SUMMARY"]["total_reject"] + result[month_str]["SUMMARY"]["total_visslab"])
 
             t_net_per_hour = t_output/t_runtime if t_runtime else 0
-            t_used = t_runtime*100/t_shift_time
-            t_percent_yield = result[month_str]["SUMMARY"]["total_prod"]*100/t_input if t_input else 0
+            t_used = t_runtime/t_shift_time
+            t_percent_yield = result[month_str]["SUMMARY"]["total_prod"]/t_input if t_input else 0
             t_mttr = result[month_str]["SUMMARY"]["total_mech_hr"]/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] else 0
             t_mtbf = t_shift_time/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] else 0
-            t_oee = t_used*t_percent_yield/100
+
+            t_rate = result[month_str]["SUMMARY"]["total_perfect_time"]/t_runtime if t_runtime else 0
+            t_oee = t_used * t_percent_yield * t_rate
 
             result[month_str]["SUMMARY"]["net_per_hour"] = t_net_per_hour
             result[month_str]["SUMMARY"]["mttr"] = t_mttr
@@ -351,12 +371,14 @@ class MarisMonthlyAnalyticsView(APIView):
             e_runtime = sh * 12 - st
             e_output = item.get('m_prod', 0) + item.get('m_scrap', 0) + item.get('m_reject', 0)
             e_input = item.get('m_prod', 0) + item.get('m_scrap', 0) + item.get('m_reject', 0) + item.get('m_visslab', 0)
+            e_perfect_time = item.get("m_perfect_time")
 
             e_net_hour = e_output / e_runtime if e_runtime > 0 else 0
             e_used = e_runtime / (sh*12) if sh > 0 else 0
             e_percent_yield = item.get('m_prod', 0) / e_input if e_input > 0 else 0
             e_mttr = item.get('m_mech_hr', 0) / item.get('m_mech_fail', 0) if item.get('m_mech_hr', 0) > 0 else 0
-            e_rate = e_output/item.get("m_output_setting") if item.get("m_output_setting") > 0 else 0
+
+            e_rate = e_perfect_time/e_runtime if e_runtime > 0 else 0
             e_oee = e_used * e_percent_yield * e_rate
 
             result[month_str]["DETAILS"][emp_name] = {
@@ -378,8 +400,9 @@ class MarisMonthlyAnalyticsView(APIView):
                 "net_hour": e_net_hour,
                 "used": e_used,
                 "percent_yield": e_percent_yield,
-                "oee": e_rate,
+                "oee": e_perfect_time,
                 "mttr": e_mttr,
+                "perfect_time": e_perfect_time,
             }
         return Response({
             "configs": {

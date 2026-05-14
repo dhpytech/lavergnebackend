@@ -66,5 +66,6 @@ class MarisDailySummary(models.Model):
 
     num_shifts = models.IntegerField(default=0)
     output_setting = models.FloatField(default=0)
+    perfect_time = models.FloatField(default=0)
     class Meta:
         unique_together = ('date', 'employee')
