@@ -99,7 +99,7 @@ SUMMARY_CONFIGS = [
         "id": "PERFECT_TIME",
         "title": "PERFECT_TIME",
         "menuTitle": "PERFECT_TIME",
-        "chartStatus": "Active",
+        "chartStatus": "DisActive",
         "datasets": [{"label": "%", "dataPath": "SUMMARY.total_perfect_time", "borderColor": "#10b981",
                       "backgroundColor": "transparent", "fill": False}]
     },
@@ -256,7 +256,7 @@ METRIC_CONFIGS = [
         "id": "perfect_time",
         "label": "PERFECT TIME (HOUR)",
         "path": Metric.perfect_time,
-        "chartStatus": "Active"
+        "chartStatus": "DisActive"
     },
     {
         "id": "mttr",
@@ -400,7 +400,7 @@ class MarisMonthlyAnalyticsView(APIView):
                 "net_hour": e_net_hour,
                 "used": e_used,
                 "percent_yield": e_percent_yield,
-                "oee": e_perfect_time,
+                "oee": e_oee,
                 "mttr": e_mttr,
                 "perfect_time": e_perfect_time,
             }
