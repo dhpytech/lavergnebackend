@@ -348,13 +348,13 @@ class MarisMonthlyAnalyticsView(APIView):
             t_input = (result[month_str]["SUMMARY"]["total_prod"] + result[month_str]["SUMMARY"]["total_scrap"] +
                        result[month_str]["SUMMARY"]["total_reject"] + result[month_str]["SUMMARY"]["total_visslab"])
 
-            t_net_per_hour = t_output/t_runtime if t_runtime else 0
-            t_used = t_runtime/t_shift_time
+            t_net_per_hour = t_output/t_runtime if t_runtime > 0 else 0
+            t_used = t_runtime/t_shift_time if t_shift_time > 0 else 0
             t_percent_yield = result[month_str]["SUMMARY"]["total_prod"]/t_input if t_input else 0
-            t_mttr = result[month_str]["SUMMARY"]["total_mech_hr"]/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] else 0
-            t_mtbf = t_shift_time/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] else 0
+            t_mttr = result[month_str]["SUMMARY"]["total_mech_hr"]/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] > 0 else 0
+            t_mtbf = t_shift_time/result[month_str]["SUMMARY"]["total_mech_fail"] if result[month_str]["SUMMARY"]["total_mech_fail"] > 0 else 0
 
-            t_rate = result[month_str]["SUMMARY"]["total_perfect_time"]/t_runtime if t_runtime else 0
+            t_rate = result[month_str]["SUMMARY"]["total_perfect_time"]/t_runtime if t_runtime > 0 else 0
             t_oee = t_used * t_percent_yield * t_rate
 
             result[month_str]["SUMMARY"]["net_per_hour"] = t_net_per_hour
@@ -376,7 +376,7 @@ class MarisMonthlyAnalyticsView(APIView):
             e_net_hour = e_output / e_runtime if e_runtime > 0 else 0
             e_used = e_runtime / (sh*12) if sh > 0 else 0
             e_percent_yield = item.get('m_prod', 0) / e_input if e_input > 0 else 0
-            e_mttr = item.get('m_mech_hr', 0) / item.get('m_mech_fail', 0) if item.get('m_mech_hr', 0) > 0 else 0
+            e_mttr = item.get('m_mech_hr', 0) / item.get('m_mech_fail', 0) if item.get('m_mech_fail', 0) > 0 else 0
 
             e_rate = e_perfect_time/e_runtime if e_runtime > 0 else 0
             e_oee = e_used * e_percent_yield * e_rate

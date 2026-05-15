@@ -28,7 +28,6 @@ class Command(BaseCommand):
                     if ":" in item:
                         code, val = item.split(":", 1)
                         d[code.strip()] = val.strip()
-                        print(d[code.strip()],val.strip())
             return d
 
         def parse_dlnc_with_cases(dlnc_raw):
@@ -45,7 +44,7 @@ class Command(BaseCommand):
                     dlnc_dict[code.strip()], case_dict[code.strip()] = val.strip(), case_part
             return dlnc_dict, case_dict
 
-        # BƯỚC 1: PHÂN TÍCH DỮ LIỆU
+        #PHÂN TÍCH DỮ LIỆU
         prepared_records = []
         for _, row in df.iterrows():
             date_raw = row.get("Date") or row.get("NewDate")
