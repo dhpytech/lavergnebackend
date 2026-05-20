@@ -15,7 +15,7 @@ class FetchParams:
     start: date
     end: date
     shift: ShiftType = "total"
-    # product_code: ProductCode = "total"
+    product_code: ProductCode = "total"
 
 
 class MarisQuery:
