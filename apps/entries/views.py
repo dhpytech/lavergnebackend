@@ -217,19 +217,34 @@ class IsoMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
+# entries/views.py
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from rest_framework import status
+from .services.maris_report_services import MarisIsoReportService
+
+
 class MarisIsoReportAPIView(APIView):
+    # Đăng ký phương thức GET hợp lệ cho Django REST Framework
     def get(self, request, *args, **kwargs):
-        target_date_str = request.query_params.get('date')
+        date_str = request.query_params.get('date')
         product_code = request.query_params.get('productCode', None)
 
-        if not target_date_str:
-            return Response({"error": "Vui lòng cung cấp tham số ?date=YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
-
+        if not date_str:
+            return Response(
+                {"error": "Vui lòng cung cấp tham số ngày dạng ?date=YYYY-MM-DD"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         try:
-            report_data = MarisIsoReportService.generate_iso_report(
-                target_date_str=target_date_str,
+            # Gọi tầng service xử lý dữ liệu thô từ MarisQuery
+            data = MarisIsoReportService.generate_full_report(
+                date_str=date_str,
                 product_code=product_code
             )
-            return Response(report_data, status=status.HTTP_200_OK)
+            return Response(data, status=status.HTTP_200_OK)
+
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

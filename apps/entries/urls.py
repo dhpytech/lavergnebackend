@@ -14,6 +14,7 @@ router.register(r'daily-maris', MarisDailyViewSet, basename='daily-maris')
 
 # Kết nối router vào urlpatterns
 urlpatterns = [
+    path('daily-report/', MarisIsoReportAPIView.as_view(), name='daily-report'),
     path('', include(router.urls)),
-    path('daily-report', MarisIsoReportAPIView.as_view(), name='daily-report'),
+    # path('daily-report', include(MarisIsoReportAPIView.as_view(), namespace='daily-report')),
 ]
