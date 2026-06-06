@@ -7,65 +7,109 @@ from dashboards.services.aggregators import ProductionAggregator
 
 class MarisIsoReportService:
     @staticmethod
-    def _crunch_for_shift(target_date, shift_name, query_product_code):
-        p = FetchParams(start=target_date, end=target_date, shift=shift_name,
-                        product_code=query_product_code or "total")
+    def _crunch_for_shift(target_date, shift_name, query_product_code="total"):
+        p = FetchParams(
+            start=target_date,
+            end=target_date,
+            shift=shift_name,
+            product_code=query_product_code
+        )
         qs = MarisQuery.fetch_records(p)
         normalized = ProductionAggregator.normalize(qs)
-
         dummy_safety = {"incident": 0, "accident": 0}
+
+        employees_set = set()
+        product_codes_set = set()
+
+        for item in normalized:
+            emp = item.get("employee")
+            if emp and str(emp).strip():
+                employees_set.add(str(emp).strip())
+
+            p_code = item.get("productCode")
+            if p_code and str(p_code).strip():
+                product_codes_set.add(str(p_code).strip())
+
         stats = ProductionStats(normalized, [], [], dummy_safety, dummy_safety, dummy_safety)
+        raw_calculated = stats._get_raw(stats.data, stats.safety)
 
-        # 1. Lấy toàn bộ kết quả trả về từ hàm tính toán gốc của bạn
-        raw_calculated = stats.calculate()
+        yield_pct = raw_calculated["yield_pct"]
+        used_pct = raw_calculated["used_pct"]
+        rated_pct = raw_calculated["rate"]
 
-        # 2. Tách phần map dlnc_case ra (nếu dlnc_cases được xử lý trong stats)
-        # Nếu hàm _get_raw chưa map dlnc_case, ta xử lý nhanh tại đây:
-        dlnc_cases_map = {}
-        stop_details = []
-        problem_details = []
+        oee = yield_pct * used_pct * rated_pct
+        visslabPercent = raw_calculated["visslab"]/raw_calculated["total_output"] if raw_calculated["total_output"] else 0
 
-        for d in normalized:
-            case_name = d.get("dlnc_case", "None")
-            if d.get("dlnc", 0) > 0 and case_name.lower() != "none":
-                dlnc_cases_map[case_name] = dlnc_cases_map.get(case_name, 0.0) + d["dlnc"]
+        metrics_summary = {
+            "prod": raw_calculated["prod"],
+            "goodPro": raw_calculated["goodPro"],
+            "dlnc": raw_calculated["dlnc"],
+            "scrap": raw_calculated["scrap"],
+            "scrapDie": raw_calculated["scrapDie"],
+            "screen": raw_calculated["screen"],
+            "visslab": raw_calculated["visslab"],
+            "output": raw_calculated["total_output"],
+            "visslabPercent": visslabPercent,
+            "stop_hr": raw_calculated["stop_hr"],
+            "stop_hr_no_weekend": raw_calculated["stop_hr_no_weekend"],
+            "off_hours": raw_calculated["off_hours"],
+            "oee_pct": oee,
+            "yield_pct": raw_calculated["yield_pct"],
+            "used_pct": raw_calculated["used_pct"],
+            "rate": rated_pct,
+            "net_hr": raw_calculated["net_hr"],
+            "comments": raw_calculated["comments"],
 
-            if d.get("stopTimes"):
-                stop_details.extend(d["stopTimes"])
-            if d.get("problems"):
-                problem_details.extend(d["problems"])
+            "employees": ", ".join(sorted(list(employees_set))) if employees_set else "-",
+            "product_codes": ", ".join(sorted(list(product_codes_set))) if product_codes_set else "-",
+        }
 
-        # Trả về một dictionary bọc gọn gàng
         return {
-            "kpis": raw_calculated,  # Đút toàn bộ bảng KPIs cũ vào đây
-            "dlnc_cases_breakdown": dlnc_cases_map,
-            "raw_normalized_list": normalized,
-            "stop_details_list": stop_details,
-            "problem_details_list": problem_details
+            "metrics": metrics_summary,
+            "dlnc_cases": raw_calculated["dlnc_cases"],
+            "normalized_list": normalized,
+            "stop_details_list": raw_calculated["stop_details_list"],
+            "problem_details_list": raw_calculated["problem_details_list"]
         }
 
     @classmethod
-    def generate_full_report(cls, date_str, product_code=None):
+    def generate_daily_report(cls, date_str, product_code="total"):
         target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-        day_shift_res = cls._crunch_for_shift(target_date, "day", product_code)
-        night_shift_res = cls._crunch_for_shift(target_date, "night", product_code)
+        day_res = cls._crunch_for_shift(target_date, "day", product_code)
+        night_res = cls._crunch_for_shift(target_date, "night", product_code)
         total_res = cls._crunch_for_shift(target_date, "total", product_code)
 
-        # Bây giờ các key "kpis", "dlnc_cases_breakdown",... đã tồn tại an toàn tuyệt đối
         return {
-            "date": date_str,
-            "day_shift": day_shift_res["kpis"],
-            "night_shift": night_shift_res["kpis"],
-            "total": total_res["kpis"],
+            "success": True,
+            "data": {
+                "date": date_str,
+                "product_code": product_code,
 
-            "dlnc_breakdown": {
-                "day": day_shift_res["dlnc_cases_breakdown"],
-                "night": night_shift_res["dlnc_cases_breakdown"],
-                "total": total_res["dlnc_cases_breakdown"]
-            },
+                "kpis": {
+                    "day": day_res["metrics"],
+                    "night": night_res["metrics"],
+                    "total": total_res["metrics"]
+                },
 
-            "raw_production_details": total_res["raw_normalized_list"],
-            "raw_stop_details": total_res["stop_details_list"],
-            "raw_problem_details": total_res["problem_details_list"]
+                "dlnc_breakdown": {
+                    "day": day_res["dlnc_cases"],
+                    "night": night_res["dlnc_cases"],
+                    "total": total_res["dlnc_cases"]
+                },
+
+                "stop_details": {
+                    "day": day_res["stop_details_list"],
+                    "night": night_res["stop_details_list"],
+                    "total": total_res["stop_details_list"]
+                },
+
+                "problem_details": {
+                    "day": day_res["problem_details_list"],
+                    "night": night_res["problem_details_list"],
+                    "total": total_res["problem_details_list"]
+                },
+
+                "raw_problem_details": total_res["problem_details_list"]
+            }
         }

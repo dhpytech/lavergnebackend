@@ -225,10 +225,8 @@ from .services.maris_report_services import MarisIsoReportService
 
 
 class MarisIsoReportAPIView(APIView):
-    # Đăng ký phương thức GET hợp lệ cho Django REST Framework
     def get(self, request, *args, **kwargs):
         date_str = request.query_params.get('date')
-        product_code = request.query_params.get('productCode', None)
 
         if not date_str:
             return Response(
@@ -236,10 +234,10 @@ class MarisIsoReportAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
-            # Gọi tầng service xử lý dữ liệu thô từ MarisQuery
-            data = MarisIsoReportService.generate_full_report(
+            # Ép mặc định chạy toàn bộ mã hàng phục vụ Daily Report tổng
+            data = MarisIsoReportService.generate_daily_report(
                 date_str=date_str,
-                product_code=product_code
+                product_code="total"
             )
             return Response(data, status=status.HTTP_200_OK)
 

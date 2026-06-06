@@ -14,6 +14,10 @@ class ProductionStats:
 
         active_shifts = set()
         dlnc_cases_map = {}
+        stop_details = []
+        problem_details = []
+        comments = []
+
         for d in data:
             p["prod"] += d["goodPro"] + d["dlnc"]
             p["goodPro"] += d["goodPro"]
@@ -33,6 +37,14 @@ class ProductionStats:
 
             if d.get("employee") and d.get("employee").strip():
                 active_shifts.add(f'{d["date"]} - {d["shift"]}')
+
+            if d.get("stopTimes"):
+                stop_details.extend(d["stopTimes"])
+            if d.get("problems"):
+                problem_details.extend(d["problems"])
+
+            if d.get("comment"):
+                comments.append(d["comment"])
 
             stops = d.get("stopTimes")
             STOP_CODE_MAP = {
@@ -80,9 +92,10 @@ class ProductionStats:
 
         return {
             **p, "used_pct": used_pct, "yield_pct": yield_pct, "rate": rate, "net_hr": net_hr, "total_hr": total_hr,
-            "num_shifts": num_shifts, "total_setting": total_setting,
+            "num_shifts": num_shifts, "total_setting": total_setting, "total_output": total_output,
             "incident": safety_vals['incident'], "accident": safety_vals['accident'],
-            "dlnc_cases": dlnc_cases_map,
+            "dlnc_cases": dlnc_cases_map, "stop_details_list": stop_details, "problem_details_list": problem_details,
+            "comments": comments,
         }
 
     def _diff(self, curr, past):
@@ -93,14 +106,6 @@ class ProductionStats:
         c = self._get_raw(self.data, self.safety)
         l = self._get_raw(self.lm, self.safety_lm)
         y = self._get_raw(self.ly, self.safety_ly)
-
-        stop_details = []
-        problem_details = []
-        for d in self.data:
-            if d.get("stopTimes"):
-                stop_details.extend(d["stopTimes"])
-            if d.get("problems"):
-                problem_details.extend(d["problems"])
 
         return {
             "PRODUCTION (KG)": {
@@ -192,6 +197,6 @@ class ProductionStats:
             # === ĐÂY CHÍNH LÀ NƠI TRẢ VỀ ĐỂ DÙNG CHO CÁC PHẦN BÁO CÁO SAU TẠI FRONTEND ===
             "dlnc_cases_breakdown": c["dlnc_cases"],
             "raw_normalized_list": self.data,
-            "stop_details_list": stop_details,
-            "problem_details_list": problem_details
+            "stop_details_list": c["stop_details_list"],
+            "problem_details_list": c["problem_details_list"]
         }
