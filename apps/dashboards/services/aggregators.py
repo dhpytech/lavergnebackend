@@ -9,6 +9,12 @@ class ProductionAggregator:
             for index, item in enumerate(prod_list):
                 is_first = (index == 0)
 
+                raw_outsource = item.get("outsource", False)
+                if isinstance(raw_outsource, str):
+                    outsource_bool = raw_outsource.lower() == "true"
+                else:
+                    outsource_bool = bool(raw_outsource)
+
                 normalized.append({
                     "id": r.id,
                     "date": r.date,
@@ -24,6 +30,7 @@ class ProductionAggregator:
                     "dlnc_case": str(item.get("dlnc_case") or "None").strip(),
                     "visslab": float(item.get("visslab") or 0) + float(item.get("visLab") or 0),
                     "outputSetting": float(item.get("outputSetting") or 0),
+                    'outsource': outsource_bool,
                     "stopTimes": r.stop_time_data if is_first else [],
                     "problems": r.problem_data if is_first else []
                 })

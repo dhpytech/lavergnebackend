@@ -36,10 +36,11 @@ class MarisIsoReportService:
         yield_pct = raw_calculated["yield_pct"]
         used_pct = raw_calculated["used_pct"]
         rated_pct = raw_calculated["rate"]
+        lost_disp = raw_calculated["stop_hr_no_weekend"]*raw_calculated["net_hr"]
 
         oee = yield_pct * used_pct * rated_pct
         visslabPercent = raw_calculated["visslab"]/raw_calculated["total_output"] if raw_calculated["total_output"] else 0
-
+        setting_kgh = raw_calculated["total_output"]/raw_calculated["perfect_time"] if raw_calculated["perfect_time"] else 0,
         metrics_summary = {
             "prod": raw_calculated["prod"],
             "goodPro": raw_calculated["goodPro"],
@@ -48,7 +49,7 @@ class MarisIsoReportService:
             "scrapDie": raw_calculated["scrapDie"],
             "screen": raw_calculated["screen"],
             "visslab": raw_calculated["visslab"],
-            "output": raw_calculated["total_output"],
+            "output": raw_calculated["total_all_output"],
             "visslabPercent": visslabPercent,
             "stop_hr": raw_calculated["stop_hr"],
             "stop_hr_no_weekend": raw_calculated["stop_hr_no_weekend"],
@@ -57,8 +58,11 @@ class MarisIsoReportService:
             "yield_pct": raw_calculated["yield_pct"],
             "used_pct": raw_calculated["used_pct"],
             "rate": rated_pct,
+            "perfect_time": raw_calculated["perfect_time"],
             "net_hr": raw_calculated["net_hr"],
             "comments": raw_calculated["comments"],
+            "lost_disp": lost_disp,
+            "setting_kgh":setting_kgh,
 
             "employees": ", ".join(sorted(list(employees_set))) if employees_set else "-",
             "product_codes": ", ".join(sorted(list(product_codes_set))) if product_codes_set else "-",

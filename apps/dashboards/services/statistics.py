@@ -18,6 +18,9 @@ class ProductionStats:
         problem_details = []
         comments = []
 
+        total_output = 0
+        total_input = 0
+        total_prod = 0
         for d in data:
             p["prod"] += d["goodPro"] + d["dlnc"]
             p["goodPro"] += d["goodPro"]
@@ -27,9 +30,21 @@ class ProductionStats:
             p["reject"] += d["reject"]
             p["screen"] += d["screen"]
             p["visslab"] += d["visslab"]
-            p["output_setting"] += d["outputSetting"]
-            each_perfect_time = (d["goodPro"]+d["dlnc"]+d["scrap"]+d["screen"]+d["reject"])/d["outputSetting"] if d["outputSetting"] else 0
-            p["perfect_time"] += each_perfect_time
+
+            if not d["outsource"]:
+                p["output_setting"] += d["outputSetting"]
+                each_perfect_time = (d["goodPro"]+d["dlnc"]+d["scrap"]+d["screen"]+d["reject"])/d["outputSetting"] if d["outputSetting"] else 0
+                each_output = d["goodPro"] + d["dlnc"] + d["scrap"] + d["reject"]
+                each_input = d["goodPro"] + d["dlnc"] + d["scrap"] + d["reject"] + d["visslab"]
+                each_prod = d["goodPro"] + d["dlnc"]
+
+                total_output += each_output
+                total_input += each_input
+                total_prod += each_prod
+                print(total_prod)
+                # print(total_output)
+                print(total_input)
+                p["perfect_time"] += each_perfect_time
 
             case_name = d.get("dlnc_case", "None")
             if d["dlnc"] > 0 and case_name.lower() != "none":
@@ -80,12 +95,11 @@ class ProductionStats:
         total_hr = num_shifts * 12
         run_time = total_hr - p['stop_hr_no_weekend']
 
-        total_output = p["prod"]+p["scrap"]+p["reject"]
-        total_input = p["prod"]+p["scrap"]+p["reject"]+p["visslab"]
+        total_all_output = p["prod"]+p["scrap"]+p["reject"]
         total_setting = p['output_setting']
 
         used_pct = run_time / total_hr if total_hr > 0 else 0
-        yield_pct = p["prod"] / total_input if total_input > 0 else 0
+        yield_pct = total_prod / total_input if total_input > 0 else 0
         net_hr = total_output/run_time if run_time > 0 else 0
 
         rate = p["perfect_time"]/run_time if run_time > 0 else 0
@@ -93,7 +107,7 @@ class ProductionStats:
         return {
             **p, "used_pct": used_pct, "yield_pct": yield_pct, "rate": rate, "net_hr": net_hr, "total_hr": total_hr,
             "num_shifts": num_shifts, "total_setting": total_setting, "total_output": total_output,
-            "incident": safety_vals['incident'], "accident": safety_vals['accident'],
+            "total_all_output": total_all_output, "incident": safety_vals['incident'], "accident": safety_vals['accident'],
             "dlnc_cases": dlnc_cases_map, "stop_details_list": stop_details, "problem_details_list": problem_details,
             "comments": comments,
         }
