@@ -246,3 +246,135 @@ class MarisIsoReportAPIView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class IsoMetalMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = MetalInput.objects.all().order_by('date')
+    serializer_class = MetalInputSerializer
+
+    def list(self, request, *args, **kwargs):
+        shift_param = request.query_params.get('shift', 'total').lower()
+        try:
+            month = int(request.query_params.get('month', timezone.now().month))
+            year = int(request.query_params.get('year', timezone.now().year))
+        except ValueError:
+            return Response({"error": "Invalid month/year"}, status=400)
+
+        _, last_day = calendar.monthrange(year, month)
+        start_date = f"{year}-{month:02d}-01"
+        end_date = f"{year}-{month:02d}-{last_day}"
+
+        qs = self.get_queryset().filter(date__gte=start_date, date__lte=end_date)
+        if shift_param != 'total':
+            qs = qs.filter(shift__iexact=shift_param)
+
+        matrix = {
+            "operators": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "lots": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "in": defaultdict(lambda: [0.0] * last_day),
+            "out": defaultdict(lambda: [0.0] * last_day),
+            "rework": defaultdict(lambda: [0.0] * last_day),
+        }
+
+        for rec in qs:
+            day_idx = rec.date.day - 1
+
+            emp = str(rec.employee).strip() if rec.employee else ""
+            if emp and emp not in matrix["operators"]["operator"][day_idx]:
+                matrix["operators"]["operator"][day_idx].append(emp)
+
+            lot = str(rec.lot_number).strip() if rec.lot_number else ""
+            if lot and lot not in matrix["lots"]["lot_number"][day_idx]:
+                matrix["lots"]["lot_number"][day_idx].append(lot)
+
+            for p in (rec.production_data or []):
+                sku = str(p.get('productCode') or rec.lot_number or 'Others').strip()
+                in_qty = get_val(p, 'inputQty')
+                out_qty = get_val(p, 'outputQty')
+                action = str(p.get('action') or '').strip().lower()
+
+                matrix["in"][sku][day_idx] += in_qty
+                if action == 'rework':
+                    matrix["rework"][sku][day_idx] += out_qty
+                else:
+                    matrix["out"][sku][day_idx] += out_qty
+
+        return Response({
+            "metadata": {"month": month, "year": year, "last_day": last_day},
+            "matrix": {
+                "operators": dict(matrix["operators"]),
+                "lots": dict(matrix["lots"]),
+                "in": dict(matrix["in"]),
+                "out": dict(matrix["out"]),
+                "rework": dict(matrix["rework"]),
+            },
+            "summary_totals": {}
+        })
+
+
+class IsoBaggingMonthlyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = BaggingInput.objects.all().order_by('date')
+    serializer_class = BaggingInputSerializer
+
+    def list(self, request, *args, **kwargs):
+        shift_param = request.query_params.get('shift', 'total').lower()
+        try:
+            month = int(request.query_params.get('month', timezone.now().month))
+            year = int(request.query_params.get('year', timezone.now().year))
+        except ValueError:
+            return Response({"error": "Invalid month/year"}, status=400)
+
+        _, last_day = calendar.monthrange(year, month)
+        start_date = f"{year}-{month:02d}-01"
+        end_date = f"{year}-{month:02d}-{last_day}"
+
+        qs = self.get_queryset().filter(date__gte=start_date, date__lte=end_date)
+        if shift_param != 'total':
+            qs = qs.filter(shift__iexact=shift_param)
+
+        matrix = {
+            "operators": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "operators_2": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "lots": defaultdict(lambda: [[] for _ in range(last_day)]),
+            "in": defaultdict(lambda: [0.0] * last_day),
+            "out": defaultdict(lambda: [0.0] * last_day),
+            "rework": defaultdict(lambda: [0.0] * last_day),
+        }
+
+        for rec in qs:
+            day_idx = rec.date.day - 1
+
+            emp1 = str(rec.employee).strip() if rec.employee else ""
+            if emp1 and emp1 not in matrix["operators"]["operator_1"][day_idx]:
+                matrix["operators"]["operator_1"][day_idx].append(emp1)
+
+            emp2 = str(rec.employee_2).strip() if rec.employee_2 else ""
+            if emp2 and emp2 not in matrix["operators_2"]["operator_2"][day_idx]:
+                matrix["operators_2"]["operator_2"][day_idx].append(emp2)
+
+            lot = str(rec.lot_number).strip() if rec.lot_number else ""
+            if lot and lot not in matrix["lots"]["lot_number"][day_idx]:
+                matrix["lots"]["lot_number"][day_idx].append(lot)
+
+            for p in (rec.production_data or []):
+                sku = str(p.get('productCode') or rec.lot_number or 'Others').strip()
+                in_qty = get_val(p, 'inputQty')
+                out_qty = get_val(p, 'outputQty')
+                rework_qty = get_val(p, 'reworkQty', 'rework')
+
+                matrix["in"][sku][day_idx] += in_qty
+                matrix["out"][sku][day_idx] += out_qty
+                matrix["rework"][sku][day_idx] += rework_qty
+
+        return Response({
+            "metadata": {"month": month, "year": year, "last_day": last_day},
+            "matrix": {
+                "operators": dict(matrix["operators"]),
+                "operators_2": dict(matrix["operators_2"]),
+                "lots": dict(matrix["lots"]),
+                "in": dict(matrix["in"]),
+                "out": dict(matrix["out"]),
+                "rework": dict(matrix["rework"]),
+            },
+            "summary_totals": {}
+        })
